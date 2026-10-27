@@ -295,7 +295,8 @@ const PATHS={
   archive:"M4 6.2h16v3.6H4zM5.4 9.8v8.4A1.6 1.6 0 0 0 7 19.8h10a1.6 1.6 0 0 0 1.6-1.6V9.8M10 13.5h4",
   heart:"M12 19.5S4.2 15 4.2 9.6A4 4 0 0 1 12 8a4 4 0 0 1 7.8 1.6C19.8 15 12 19.5 12 19.5z",
   x:"M6.5 6.5l11 11M17.5 6.5l-11 11",
-  star:"M12 4.2l2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.7-4.8 2.7 1-5.4-4-3.7 5.4-.7z"
+  star:"M12 4.2l2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.7-4.8 2.7 1-5.4-4-3.7 5.4-.7z",
+  flag:"M5.5 20.5V4M5.5 4.5h11.3l-2.3 4 2.3 4H5.5"
 };
 const svg=(n,z)=>'<svg viewBox="0 0 24 24" width="'+(z||18)+'" height="'+(z||18)+'" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="'+PATHS[n]+'"/></svg>';
 const IC=(n,col,small)=>'<span class="ic'+(small?" s":"")+'" style="--ic:var('+(col||"--k-c")+')">'+svg(n,small?14:17)+'</span>';
@@ -436,7 +437,7 @@ const field=(label,inner)=>'<label class="field"><span>'+label+'</span>'+inner+'
 const bar=pct=>'<div class="bar"><i style="width:'+pct+'%"></i></div>';
 const chipS=s=>'<span class="chip '+(s==="完了"?"good":s==="進行中"?"acc":"")+'">'+svg(STI[s][0],12)+s+'</span>';
 const photoBtn=t=>'<label class="b2 bi">'+svg("camera",16)+'写真を足す<input class="vh" type="file" accept="image/*" multiple data-photo="'+t+'"></label>';
-const thumbs=(arr,i)=>(arr||[]).map((p,j)=>'<div class="ph"><button class="t" data-act="zoom" data-i="'+i+'" data-j="'+j+'" aria-label="写真を大きく見る"><img src="'+p+'" alt="伝達の写真"></button><button class="rm" data-act="rmPhoto" data-i="'+i+'" data-j="'+j+'" aria-label="この写真を消す">'+svg("x",12)+'</button></div>').join("");
+const thumbs=(arr,i)=>(arr||[]).map((p,j)=>'<div class="ph"><button class="t" data-act="zoom" data-i="'+i+'" data-j="'+j+'" aria-label="写真を大きく見る"><img '+phAttr(p)+' alt="伝達の写真"></button><button class="rm" data-act="rmPhoto" data-i="'+i+'" data-j="'+j+'" aria-label="この写真を消す">'+svg("x",12)+'</button></div>').join("");
 
 function checksBlock(e,cat){
   const gl={must:"秋の行事の必須ライン",every:"毎回の確認（行事のチェックリスト）",more:"構想メモ・AI提案の追加項目"};
@@ -617,12 +618,30 @@ function buildSheet(){const el=document.getElementById("sheet");if(el)el.innerHT
 function doPrint(){if(!ev()){alert_("印刷する行事がありません。先に行事を作ってください。");return}buildSheet();try{window.print()}catch(x){}toast("印刷画面が開かない場合は、⌘P（Windowsは Ctrl+P）を押してください。どの画面からでも、共有用シートが印刷されます。")}
 
 /* ===== 描画 ===== */
+/* 画面上部の帯：ブラウザ保存なら「全部消す」、シート保存なら保存の状態と知らせ */
+let SAVE={k:"",m:"",at:""},lastProblem="";
+const PROBLEM=["conflict","net","pass","big"];
+function paintBanner(){
+  if(Store.mode==="local"){$c("banner").innerHTML=S.ui.confirmReset?'<span><b>このブラウザに入力したものを全部消します。</b>行事・伝達ログ・写真もすべて消えます。元に戻せません。</span><span class="row"><button class="danger" data-act="doReset">全部消す</button><button class="b2" data-act="noReset">やめる</button></span>':'<span><b>v2（準備中）。</b>入力はこのブラウザにだけ保存されます（Googleシートにつなぐまでの仮の保存です）。</span><button class="b2" data-act="askReset">全部消す</button>';return}
+  const k=SAVE.k,bad=PROBLEM.indexOf(k)>=0;
+  const msg=bad?'<span style="color:var(--crit)"><b>'+esc(SAVE.m)+'</b></span>':'<span>'+(k==="saving"?"Googleシートに保存しています…":k==="saved"?"Googleシートに保存しました（"+SAVE.at+"）":"入力はGoogleシートに保存されます。")+'</span>';
+  const btn=k==="net"?'<button class="b" data-act="retry">もう一度送る</button>':(k==="conflict"||k==="pass")?'<button class="b" data-act="reload">開き直す</button>':"";
+  $c("banner").innerHTML=msg+'<span class="row">'+btn+'<button class="b2" data-act="forget">この端末の合言葉を消す</button></span>';
+}
+Store.onStatus=function(k,m){
+  const d=new Date();SAVE={k:k,m:m,at:d.getHours()+":"+String(d.getMinutes()).padStart(2,"0")};paintBanner();
+  if(PROBLEM.indexOf(k)>=0&&m!==lastProblem)toast(m,true);
+  lastProblem=PROBLEM.indexOf(k)>=0?m:"";
+};
+/* ドライブの写真が届いたら、その写真の枠だけ差し替える（入力中の欄を描き直さないため） */
+Store.onPhoto=function(k,src){document.querySelectorAll("img[data-ph]").forEach(function(im){if(im.getAttribute("data-ph")===k)im.src=src})};
+const phAttr=p=>'src="'+Store.photoSrc(p)+'"'+(String(p).indexOf("drv:")===0?' data-ph="'+esc(p)+'"':"");
 const VIEWS={list:vList,dash:vDash,tasks:vTasks,people:vPeople,things:vThings,money:vMoney,info:vInfo,log:vLog,docs:vDocs};
 function render(keepScroll){
   const e=ev();
   const fe=fyEvents(S.ui.fy);
   $c("ctl").innerHTML='<label>年度 <select data-u="fy">'+fyList().map(y=>'<option value="'+y+'"'+(y===S.ui.fy?" selected":"")+'>'+y+'年度'+(y<curFY()?'（アーカイブ）':'')+'</option>').join("")+'</select></label><label>行事 <select data-u="currentId">'+(fe.length?fe.map(x=>'<option value="'+x.id+'"'+(x.id===e.id?" selected":"")+'>'+esc(x.name)+'</option>').join(""):'<option value="">（この年度の行事なし）</option>')+'</select></label><label>この日として見る <input type="date" data-u="asOf" value="'+esc(asOf())+'"></label><button class="b2" data-act="today">今日に戻す</button><button class="b bi" data-act="print">'+svg("print",16)+'印刷する（共有用シート）</button>';
-  $c("banner").innerHTML=Store.mode!=="local"?"":S.ui.confirmReset?'<span><b>このブラウザに入力したものを全部消します。</b>行事・伝達ログ・写真もすべて消えます。元に戻せません。</span><span class="row"><button class="danger" data-act="doReset">全部消す</button><button class="b2" data-act="noReset">やめる</button></span>':'<span><b>v2（準備中）。</b>入力はこのブラウザにだけ保存されます（Googleシートにつなぐまでの仮の保存です）。</span><button class="b2" data-act="askReset">全部消す</button>';
+  paintBanner();
   $c("tabs").innerHTML=TABS.map(t=>'<button class="tab" role="tab" aria-selected="'+(S.ui.tab===t[0])+'" data-act="go" data-i="'+t[0]+'">'+IC(t[2],t[3],true)+'<span>'+t[1]+'</span></button>').join("");
   $c("owners") || 0;
   const names=Array.from(new Set(OWNERS.concat(STAFF,e?e.team.map(t=>t.name):[]))).filter(Boolean);
@@ -630,7 +649,7 @@ function render(keepScroll){
   const y=window.scrollY;
   $c("view").innerHTML=(S.ui.tab!=="list"&&S.ui.tab!=="docs"&&!fe.length)?'<div class="sec"><h2>'+IC("list")+'この年度の行事はありません</h2><p>'+S.ui.fy+'年度（'+S.ui.fy+'年4月〜'+(S.ui.fy+1)+'年3月）の行事はまだ作られていません。</p><div><button class="b" data-act="go" data-i="list">行事一覧へ</button></div></div>':VIEWS[S.ui.tab]();
   const z=S.ui.zoom,zb=$c("zoom");
-  if(z&&e){const ph=z.i==="d"?S.ui.draft.log.photos:((e.logs[Number(z.i)]||{}).photos||[]);const src=ph[z.j];if(src){zb.className="on";zb.innerHTML='<div><img src="'+src+'" alt="伝達の写真（拡大）"><div class="zt">タップで閉じる</div></div>'}else{S.ui.zoom=null;zb.className="";zb.innerHTML=""}}else{zb.className="";zb.innerHTML=""}
+  if(z&&e){const ph=z.i==="d"?S.ui.draft.log.photos:((e.logs[Number(z.i)]||{}).photos||[]);const src=ph[z.j];if(src){zb.className="on";zb.innerHTML='<div><img '+phAttr(src)+' alt="伝達の写真（拡大）"><div class="zt">タップで閉じる</div></div>'}else{S.ui.zoom=null;zb.className="";zb.innerHTML=""}}else{zb.className="";zb.innerHTML=""}
   derived();buildSheet();
   fitAll();
   if(keepScroll)window.scrollTo(0,y);
@@ -655,7 +674,7 @@ function derived(){
   const ow=$c("onewarn");if(ow){const l=S.ui.draft.log.one;ow.innerHTML=l.length>40?'<span class="chip warn">長くなっています。「要するに？」を一文にしましょう（'+l.length+'字）</span>':""}
   const mk=$c("mk");if(mk)mk.disabled=!S.ui.draft.ev.date;
   const fh=$c("fyhint");if(fh)fh.textContent=S.ui.draft.ev.date?fyOf(S.ui.draft.ev.date)+"年度の行事になります":"";
-  const pu=$c("phuse");if(pu){const n=S.events.reduce((a,x)=>a+photoCount(x),0);pu.textContent="写真 全部で"+n+"枚・約"+(photoChars()/1e6).toFixed(1)+"MB（このブラウザに入る目安は約"+(PHOTO_LIMIT/1e6).toFixed(1)+"MB。v2ではGoogleドライブに移します）"}
+  const pu=$c("phuse");if(pu){const n=S.events.reduce((a,x)=>a+photoCount(x),0);pu.textContent=Store.mode!=="local"?"写真 全部で"+n+"枚（Googleドライブに保存します）":"写真 全部で"+n+"枚・約"+(photoChars()/1e6).toFixed(1)+"MB（このブラウザに入る目安は約"+(PHOTO_LIMIT/1e6).toFixed(1)+"MB。v2ではGoogleドライブに移します）"}
   buildSheet();
 }
 
@@ -691,6 +710,9 @@ document.addEventListener("click",function(x){
   const b=x.target.closest("[data-act]");if(!b||b.tagName==="INPUT")return;
   const a=b.getAttribute("data-act"),i=b.getAttribute("data-i"),e=ev(),dr=S.ui.draft;
   if(a==="go"){S.ui.tab=i;render();window.scrollTo(0,0);return}
+  if(a==="retry"){if(Store.retry)Store.retry();return}
+  if(a==="reload"){location.reload();return}
+  if(a==="forget"){Store.forget();location.reload();return}
   if(a==="jump"){const r=$c("tr_"+i);if(r){r.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});r.classList.remove("hl");void r.offsetWidth;r.classList.add("hl")}return}
   if(a==="open"){S.currentId=i;S.ui.tab="dash";persist();render();window.scrollTo(0,0);return}
   if(a==="today"){S.ui.asOf=todayISO();setFY(curFY());render(true);return}
@@ -741,7 +763,7 @@ function addPhotos(inp){
     const arr=arrOf();if(!arr)return;
     if(arr.length>=PHOTO_MAX){alert_("写真は1件につき"+PHOTO_MAX+"枚までです");return}
     if(!url){alert_("写真を読み込めませんでした");return}
-    if(photoChars()+url.length>PHOTO_LIMIT){alert_("保存できる容量がいっぱいです。使っていない写真を消してください");return}
+    if(Store.mode==="local"&&photoChars()+url.length>PHOTO_LIMIT){alert_("保存できる容量がいっぱいです。使っていない写真を消してください");return}
     arr.push(url);
     if(tgt!=="draft"&&!touch())arr.pop()})});
   chain.then(function(){render(true)})}
@@ -753,16 +775,28 @@ function alert_(m){toast(m,true)}
 
 window.addEventListener("beforeprint",buildSheet);
 /* ===== 起動：データ・資料・呼び名を store.js から読む ===== */
+function boot(){
 Promise.all([Store.load(),Store.docs(),Store.owners()]).then(function(r){
   const l=r[0];
   S.events=l&&Array.isArray(l.events)?l.events:[];
   S.currentId=(l&&l.currentId)||(S.events[0]||{}).id||"";
+  if(!S.events.some(e=>e.id===S.currentId))S.currentId=(S.events[0]||{}).id||"";
   DOCSRC=r[1]||null;
   STAFF=Array.isArray(r[2])?r[2]:[];
   if(!S.events.length)S.ui.tab="list";
   setFY(curFY(),true);
   render();
-}).catch(function(){$c("view").innerHTML='<p class="empty">データを読み込めませんでした。時間をおいて開き直してください。</p>'});
+}).catch(function(err){
+  if(err&&err.need==="pass"){passView(err.why);return}
+  $c("view").innerHTML='<p class="empty">データを読み込めませんでした。時間をおいて開き直してください。</p>'});
+}
+/* 合言葉を入れる画面（シート保存のときだけ出る）。合言葉はこの端末に覚えておく */
+function passView(why){
+  $c("view").innerHTML='<div class="sec"><h2>'+IC("list")+'合言葉を入れてください</h2><form id="passf" class="card stack"><p>合言葉を入れると、行事のデータが開きます。</p>'+(why?'<p style="color:var(--crit)"><b>'+esc(why)+'</b></p>':"")+'<label>合言葉 <input type="password" id="passin" autocomplete="current-password" required></label><div><button class="b" type="submit">開く</button></div><p class="small muted">この端末に覚えておきます。共用の端末では、使い終わったら画面上部の「この端末の合言葉を消す」を押してください。</p></form></div>';
+  const f=$c("passin");if(f)f.focus();
+}
+document.addEventListener("submit",function(x){if(x.target.id!=="passf")return;x.preventDefault();Store.setPass($c("passin").value);$c("view").innerHTML='<p class="empty">開いています…</p>';boot()});
+boot();
 })();
 </script>
 </body>
