@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>行事管理APP</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 配置：上に水色の帯（園・年度・行事・日付）、その下にアイコンつきの9つのタブ。中身は「いま何が止まっているか」を先頭に置く */
+:root{
+  --bg:#EEF8FC; --surface:#FFFFFF; --ink:#12333F; --muted:#51707C; --line:#D3E8F1;
+  --hd:#46C6E8; --hd-ink:#06303F;
+  --accent:#27AEDB; --btn:#0A7BA3; --btn-ink:#FFFFFF; --accent-text:#0B6F93; --accent-bg:#DFF3FA;
+  --good:#1F8F55; --good-bg:#DDF5E7; --warn:#8F5A00; --warn-bg:#FFF1CC; --crit:#C23A2E; --crit-bg:#FFE3DF; --crit-ink:#FFFFFF;
+  --track:#DDEEF5;
+  --k-c:#1FA3CF; --k-o:#E8801C; --k-g:#2E9E62; --k-b:#2E7FD6; --k-p:#C2488F;
+  --c1:#D64550; --c2:#5E9B3A; --c3:#D9728F; --c4:#E8912D; --c5:#7B5BB0; --c6:#2F9A5B;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-head:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1A20; --surface:#15262E; --ink:#E3F2F7; --muted:#98B4BF; --line:#28404B;
+  --hd:#14566D; --hd-ink:#E6F7FC;
+  --accent:#3CC3EC; --btn:#3CC3EC; --btn-ink:#04202B; --accent-text:#7AD8F4; --accent-bg:#17414F;
+  --good:#6CCB92; --good-bg:#1B3427; --warn:#E6B65A; --warn-bg:#3A2F14; --crit:#F08A80; --crit-bg:#3F1F1C; --crit-ink:#2B0B08;
+  --track:#233943;
+  --k-c:#5BD0F2; --k-o:#F5A04A; --k-g:#5CCB8D; --k-b:#6CAEF0; --k-p:#E57FB8;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1A20; --surface:#15262E; --ink:#E3F2F7; --muted:#98B4BF; --line:#28404B;
+  --hd:#14566D; --hd-ink:#E6F7FC;
+  --accent:#3CC3EC; --btn:#3CC3EC; --btn-ink:#04202B; --accent-text:#7AD8F4; --accent-bg:#17414F;
+  --good:#6CCB92; --good-bg:#1B3427; --warn:#E6B65A; --warn-bg:#3A2F14; --crit:#F08A80; --crit-bg:#3F1F1C; --crit-ink:#2B0B08;
+  --track:#233943;
+  --k-c:#5BD0F2; --k-o:#F5A04A; --k-g:#5CCB8D; --k-b:#6CAEF0; --k-p:#E57FB8;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7;
+  padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:12px 48px}
+#app{max-width:1040px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-head);line-height:1.4;margin:0;text-wrap:balance}
+h2{font-size:19px} h3{font-size:16px}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:13px}
+.top{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--hd);color:var(--hd-ink);border-radius:14px}
+.brand{font-family:var(--f-head);font-weight:700;font-size:20px}
+.brand small{font-family:var(--f-body);font-weight:400;color:var(--hd-ink);opacity:.8;font-size:13px;margin-left:8px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.ctl label{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--hd-ink)}
+.banner{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn);border-radius:8px;padding:8px 12px;font-size:13px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin-block:12px 18px;scrollbar-width:thin}
+.tab{flex:none;display:flex;align-items:center;gap:7px;border:0;background:none;color:var(--muted);font:inherit;font-weight:700;padding:8px 12px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--accent-text);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sec{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
+.sec>h2{border-bottom:1px solid var(--line);padding-bottom:6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+.row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.stack{display:flex;flex-direction:column;gap:10px}
+.hero{display:flex;flex-wrap:wrap;gap:8px 28px;align-items:flex-end;justify-content:space-between}
+.hero .days{font-family:var(--f-head);font-weight:700;font-size:44px;line-height:1.1}
+.hero .days small{font-size:16px;margin-left:4px}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 10px;font-size:12px;font-weight:700;white-space:nowrap;background:var(--track);color:var(--muted)}
+.chip.good{background:var(--good-bg);color:var(--good)} .chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.crit{background:var(--crit-bg);color:var(--crit)} .chip.acc{background:var(--accent-bg);color:var(--accent-text)}
+.bar{height:10px;border-radius:6px;background:var(--track);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:6px}
+.prog{display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer;font:inherit;color:inherit;width:100%;background:none;border:0;padding:0;border-radius:6px}
+.prog .h{display:flex;justify-content:space-between;align-items:baseline}
+.prog b{font-family:var(--f-head);font-size:17px}
+.tile .v{font-family:var(--f-head);font-weight:700;font-size:22px}
+.tile .l{font-size:12px;color:var(--muted)}
+.tile .chip{white-space:normal;line-height:1.5;padding:3px 12px;border-radius:14px;max-width:100%}
+.dots{display:inline-flex;gap:4px;margin-left:10px;vertical-align:middle}
+.dots i{width:10px;height:10px;border-radius:50%;display:block}
+ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.al{padding:8px 12px;border-radius:8px;display:flex;gap:10px;align-items:flex-start;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-left-width:5px}
+.al.crit{border-left-color:var(--crit)} .al.warn{border-left-color:var(--warn)} .al.info{border-left-color:var(--accent)}
+.al button{flex:none}
+button,.btn{font:inherit;cursor:pointer}
+.b{background:var(--btn);color:var(--btn-ink);border:1px solid var(--btn);border-radius:8px;padding:6px 14px;font-weight:700}
+.b[disabled]{opacity:.45;cursor:not-allowed}
+.b2{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 12px}
+.lnk{background:none;border:0;color:var(--accent-text);padding:0;text-decoration:underline;font-size:13px}
+.x{background:none;border:0;color:var(--muted);font-size:16px;padding:2px 8px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 8px;min-width:0;max-width:100%}
+textarea{width:100%;resize:vertical}
+input[type=number]{width:84px} input[type=checkbox],input[type=radio]{width:18px;height:18px;accent-color:var(--accent)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+.tw>table{min-width:600px}
+th{font-size:12px;color:var(--muted);text-align:left;font-weight:700;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td input:not([type=checkbox]),td select{width:100%;min-width:90px}
+td input[type=number]{min-width:64px;width:84px}
+.ok{background:var(--good-bg)}
+.cls{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
+.chk .t{flex:1;min-width:0}
+.chk.done .tt{color:var(--muted);text-decoration:line-through}
+.chk input[type=text]{width:100%;margin-top:4px;font-size:13px}
+.gtitle{font-size:13px;color:var(--muted);font-weight:700;margin-top:8px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field>span{font-size:12px;color:var(--muted);font-weight:700}
+.sample{background:var(--warn-bg);color:var(--warn);font-size:11px;padding:0 6px;border-radius:4px;margin-left:6px;font-weight:700;white-space:nowrap}
+.gantt{min-width:780px;position:relative}
+.grow{display:grid;grid-template-columns:260px 1fr;align-items:center;border-bottom:1px solid var(--line);min-height:40px}
+.grow.gh{min-height:0}
+/* 名前は2行まで折り返す。押すと下の表のその行へ移動する */
+.glabel{font:inherit;font-size:13px;line-height:1.35;color:var(--ink);text-align:left;background:none;border:0;padding:0 10px 0 0;margin:3px 0;cursor:pointer;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2}
+.glabel:hover{color:var(--accent-text);text-decoration:underline}
+.gtrack{position:relative;height:40px;cursor:pointer}
+.gv{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.gv.mon{background:var(--line)} .gv.today{background:var(--crit);width:2px;z-index:2} .gv.ev{background:var(--accent);width:2px;z-index:2}
+.gb{position:absolute;top:12px;height:16px;min-width:12px;border-radius:5px;background:var(--accent);z-index:1}
+.gb.done{background:var(--good)} .gb.todo{background:var(--surface);border:2px solid var(--muted)} .gb.over{background:var(--crit)}
+.ghead{position:relative;height:22px;font-size:11px;color:var(--muted)}
+.ghead span{position:absolute;top:2px;transform:translateX(-2px)}
+/* タスク表：内容を広く・折り返して全文表示。ほかの列は幅を決めて詰める */
+.tw>table.ttbl{table-layout:fixed;min-width:760px}
+.ttbl td{vertical-align:middle}
+.ttbl textarea.ttl{display:block;width:100%;resize:none;overflow:hidden;line-height:1.5;padding:5px 8px}
+.ttbl .ttl+.chip{margin-top:4px}
+.ttbl td input,.ttbl td select{min-width:0}
+.ttbl .cs .bi{display:flex;width:100%}
+.ttbl .cs select{flex:1;font-size:13px;padding:4px 2px 4px 6px}
+.ttbl .who input{font-size:13px;padding-inline:6px}
+.ttbl .dt{display:grid;grid-template-columns:auto 1fr;gap:3px 6px;align-items:center}
+.ttbl .dt span{font-size:11px;color:var(--muted);font-weight:700}
+.ttbl .dt input{font-size:13px;padding:2px 4px;width:100%;min-width:0}
+.ttbl .del{text-align:center;padding-inline:0}
+.addt .field input{width:100%}
+.doc{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;max-width:760px}
+.doc h2{margin-bottom:8px} .doc h3{margin:18px 0 6px} .doc p{margin:6px 0} .doc ul{margin:6px 0;padding-left:20px}
+.doc blockquote{margin:10px 0;padding:6px 14px;border-left:4px solid var(--accent);background:var(--accent-bg)}
+.doc .src{font-size:12px;color:var(--muted);margin-top:16px}
+.docnav{display:flex;flex-wrap:wrap;gap:8px}
+.docnav .on{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.lock{border:1px dashed var(--warn);background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:10px 14px;font-size:13px}
+.hl{animation:hl 2.4s ease-out}
+@keyframes hl{0%,30%{background:var(--warn-bg)}100%{background:transparent}}
+@media (prefers-reduced-motion:reduce){.hl{animation:none;background:var(--warn-bg)}}
+ .empty{color:var(--muted);padding:10px 0}
+.ic{display:inline-grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;background:color-mix(in srgb,var(--ic) 16%,var(--surface));color:var(--ic);vertical-align:middle}
+.ic.s{width:22px;height:22px}
+h2 .ic,h3 .ic{margin-right:8px;width:30px;height:30px}
+.bi{display:inline-flex;align-items:center;gap:6px}
+.b svg,.b2 svg,.danger svg{flex:none}
+.al .ai{flex:none;margin-top:3px}
+.al.crit .ai{color:var(--crit)} .al.warn .ai{color:var(--warn)} .al.info .ai{color:var(--accent-text)}
+.al>span:not(.ai){flex:1;min-width:0}
+.danger{background:var(--crit);color:var(--crit-ink);border:1px solid var(--crit);border-radius:8px;padding:6px 14px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.confirm{border:2px solid var(--crit);background:var(--crit-bg);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.photos{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ph{position:relative}
+.ph>button.t{border:1px solid var(--line);border-radius:8px;padding:0;background:var(--surface);display:block;overflow:hidden}
+.ph img{display:block;width:64px;height:64px;object-fit:cover}
+.ph .rm{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:grid;place-items:center;padding:0}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
+label.bi:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+label.b2.bi{cursor:pointer}
+#zoom{display:none}
+#zoom.on{display:grid;place-items:center;position:fixed;inset:0;z-index:20;background:rgba(5,25,33,.84);padding:16px;cursor:pointer}
+#zoom img{max-width:100%;max-height:82vh;border-radius:8px;background:#fff;display:block;margin:0 auto}
+#zoom .zt{color:#fff;margin-top:10px;text-align:center;font-size:13px}
+
+#sheet{display:none}
+.toast{position:fixed;left:16px;right:16px;bottom:16px;z-index:9}
+@media print{
+  @page{size:A4 portrait;margin:11mm}
+  html,body{background:#fff!important;color:#111!important}
+  body{padding:0!important;font-size:10pt;line-height:1.5}
+  #app,.toast,datalist,#zoom{display:none!important}
+  #sheet{display:block;color:#111;background:#fff;--line:#c9d3d0;--accent:#27AEDB;--good:#1F8F55;--crit:#C23A2E;--muted:#555;--surface:#fff;--ink:#111;--track:#e4efec;--warn:#8F5A00;--warn-bg:#FFF1CC}
+  #sheet *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .s-title{font-family:var(--f-head);font-size:16pt;font-weight:700;margin:0}
+  .s-sub{color:#444;font-size:9.5pt;margin-top:2px}
+  .s-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+  .s-box{border:1px solid #bcc8c4;border-radius:4px;padding:5px 6px}
+  .s-box b{font-size:10pt;white-space:nowrap}
+  .s-bar{height:7px;background:#dcecf3;border-radius:4px;overflow:hidden;margin-top:3px}
+  .s-bar i{display:block;height:100%;background:#27AEDB}
+  .s-h2{font-family:var(--f-head);font-size:11pt;font-weight:700;margin:11px 0 4px;border-bottom:1.5px solid #27AEDB;padding-bottom:2px;break-after:avoid}
+  .s-sec{break-inside:avoid}
+  table.s-t{width:100%;border-collapse:collapse;font-size:9pt}
+  .s-t th,.s-t td{border:1px solid #c9d3d0;padding:2px 5px;text-align:left;vertical-align:top;color:#111}
+  .s-t th{background:#eef5f3;font-size:8.5pt;color:#333}
+  .s-t thead{display:table-header-group}
+  .s-t tr{break-inside:avoid}
+  .s-over{color:#C23A2E;font-weight:700}
+  .s-done{color:#1F8F55}
+  .s-al{margin:0;padding:0;list-style:none;font-size:9.5pt}
+  .s-al li{padding:1px 0 1px 12px;position:relative}
+  .s-al li:before{content:"";position:absolute;left:0;top:7px;width:7px;height:7px;border-radius:50%;background:#27AEDB}
+  .s-al li.crit:before{background:#C23A2E} .s-al li.warn:before{background:#E0A100}
+  .s-foot{margin-top:10px;font-size:8.5pt;color:#555}
+  #sheet .card{border:0;padding:0;background:none}
+  #sheet .tw{overflow:visible}
+  #sheet .gantt{min-width:0}
+  #sheet .grow{grid-template-columns:150px 1fr;min-height:17px}
+  #sheet .gtrack{height:17px}
+  #sheet .gb{top:3px;height:11px;min-width:9px}
+  #sheet .glabel{font-size:8pt;display:block;white-space:nowrap;text-overflow:ellipsis;padding:0 6px 0 0;margin:0}
+  #sheet .ghead{font-size:8pt}
+  #sheet p.small{font-size:8pt}
+}
+@media (max-width:560px){.hero .days{font-size:36px} .grow{grid-template-columns:170px 1fr}}
+/* スマホ幅：タスク表を1件ずつのカードにする（内容を一番上に全幅で） */
+@media (max-width:640px){
+  .tw>table.ttbl{min-width:0}
+  .ttbl colgroup,.ttbl thead{display:none}
+  .ttbl,.ttbl tbody{display:block}
+  .ttbl tr{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"ti ti" "ca who" "dts dts" "st del";gap:8px 12px;padding:12px 2px;border-bottom:1px solid var(--line)}
+  .ttbl tr:last-child{border-bottom:0}
+  .ttbl td{display:block;border:0;padding:0;min-width:0}
+  .ttbl .ti{grid-area:ti} .ttbl .ca{grid-area:ca} .ttbl .who{grid-area:who} .ttbl .dts{grid-area:dts} .ttbl .st{grid-area:st}
+  .ttbl .del{grid-area:del;justify-self:end;align-self:end}
+  .ttbl .dt input{font-size:14px;padding:4px 8px}
+  .ttbl td[data-l]::before{content:attr(data-l);display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:2px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top">
+    <div class="brand">行事管理APP<span class="dots" aria-hidden="true"><i style="background:var(--c1)"></i><i style="background:var(--c2)"></i><i style="background:var(--c3)"></i><i style="background:var(--c4)"></i><i style="background:var(--c5)"></i><i style="background:var(--c6)"></i></span><small>v2</small></div>
+    <div class="ctl" id="ctl"></div>
+  </div>
+  <div class="banner" id="banner"></div>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="画面"></nav>
+  <main id="view"><p class="empty">読み込んでいます…</p></main>
+</div>
+<div id="sheet" aria-hidden="true"></div>
+<div id="zoom" data-act="closeZoom" role="dialog" aria-label="写真"></div>
+<datalist id="owners"></datalist>
+
+<script src="store.js"></script>
+<script>
+(function(){
+"use strict";
+/* v2の画面（2026-10-27）：v1.1（年度・削除・写真・アイコン・水色、10/27のタスク表・ガントチャート）をもとに、
+   データの出し入れを store.js に分け、見本データ・資料の本文・職員名を外した公開用の版 */
+/* ===== データの出し入れは store.js の Store だけ（v2でGoogleシート、Vercel移行時はAPIに差し替える） ===== */
+
+/* ===== 小道具 ===== */
+const CATS=["人","物","金","情報"];
+const CL={"人":"だれが","物":"段取り","金":"お金","情報":"伝えること"};
+const CATP=CATS.map(c=>[c,CL[c]]);
+const CLASSES=[["いちご組","0歳","--c1"],["りんご組","1歳","--c2"],["さくらんぼ組","2歳","--c3"],["みかん組","3歳","--c4"],["ぶどう組","4歳","--c5"],["すいか組","5歳","--c6"]];
+const OWNERS=["園長","主任","各クラス","係"];  /* 「誰が」の候補は役割だけ。職員の呼び名は Store.owners()（v2でシートの「設定」）から */
+let STAFF=[];
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const D=s=>{const a=s.split("-").map(Number);return new Date(a[0],a[1]-1,a[2])};
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const diff=(a,b)=>Math.round((D(b)-D(a))/864e5);
+const fmt=s=>{if(!s)return"未定";const d=D(s);return (d.getMonth()+1)+"/"+d.getDate()+"（"+"日月火水木金土"[d.getDay()]+"）"};
+const short=s=>{if(!s)return"";const d=D(s);return (d.getMonth()+1)+"/"+d.getDate()};
+const todayISO=()=>iso(new Date());
+const yen=n=>(Math.round(n)||0).toLocaleString("ja-JP")+"円";
+let uidN=Date.now();const uid=()=>"u"+(uidN++);
+const getP=(o,p)=>p.split(".").reduce((a,k)=>a==null?a:a[k],o);
+const setP=(o,p,v)=>{const k=p.split(".");const last=k.pop();k.reduce((a,x)=>a[x],o)[last]=v};
+
+/* ===== 年度（4月1日〜3月31日）と保管期間 ===== */
+const RETAIN_YEARS=2;   /* 年度が終わってから2年（2026年度なら2029年3月末まで）。変えるのはここ1か所 */
+const fyOf=s=>{const d=D(s);return d.getMonth()>=3?d.getFullYear():d.getFullYear()-1};
+const keepUntil=y=>(y+1+RETAIN_YEARS)+"-03-31";
+const ymLabel=s=>{const d=D(s);return d.getFullYear()+"年"+(d.getMonth()+1)+"月"};
+
+/* ===== アイコン（自分で描いた簡単な図形。絵文字は使わない） ===== */
+const PATHS={
+  list:"M6.5 4.5h11A2.5 2.5 0 0 1 20 7v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18V7a2.5 2.5 0 0 1 2.5-2.5zM4 9.5h16M8 2.8v3.4M16 2.8v3.4M8.5 14h.01M12 14h.01M15.5 14h.01M8.5 17.2h.01M12 17.2h.01",
+  dash:"M5.5 19.5v-7M12 19.5v-14M18.5 19.5v-10",
+  tasks:"M4.5 6.5h7M8.5 12h10M6 17.5h8",
+  people:"M9 11a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM3.2 19.5c0-3.2 2.6-5.4 5.8-5.4s5.8 2.2 5.8 5.4M16.2 4.9a3.1 3.1 0 0 1 0 5.9M17.8 14.4c1.9.6 3.2 2.3 3.2 5.1",
+  things:"M10 6.5h10M10 12h10M10 17.5h10M4 6.5l1.2 1.2L7.4 5.3M4 12l1.2 1.2 2.2-2.4M4 17.5l1.2 1.2 2.2-2.4",
+  money:"M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM9 8.2l3 4 3-4M12 12.2v5M9.6 13.2h4.8M9.6 15.5h4.8",
+  info:"M6 4.5h12A2.5 2.5 0 0 1 20.5 7v7a2.5 2.5 0 0 1-2.5 2.5h-6.2L7.5 20.2V16.5H6A2.5 2.5 0 0 1 3.5 14V7A2.5 2.5 0 0 1 6 4.5zM8 9.3h8M8 12.3h5",
+  log:"M6 3.8h10.5a2 2 0 0 1 2 2v12.4a2 2 0 0 1-2 2H6zM6 3.8v16.4M9.8 8.5h5.4M9.8 12h5.4",
+  docs:"M12 6.6C10.5 5.4 8.2 4.8 4.5 4.8v12.4c3.7 0 6 .6 7.5 1.8 1.5-1.2 3.8-1.8 7.5-1.8V4.8c-3.7 0-6 .6-7.5 1.8zM12 6.6V19",
+  print:"M7.5 9V4.5h9V9M7.5 17H5.8A1.8 1.8 0 0 1 4 15.2v-4.4A1.8 1.8 0 0 1 5.8 9h12.4a1.8 1.8 0 0 1 1.8 1.8v4.4a1.8 1.8 0 0 1-1.8 1.8h-1.7M7.5 14h9v6h-9z",
+  trash:"M5 7.2h14M9.8 7.2V4.6h4.4v2.6M7 7.2l.8 11.6a1.6 1.6 0 0 0 1.6 1.5h5.2a1.6 1.6 0 0 0 1.6-1.5L17 7.2M10.4 11v6M13.6 11v6",
+  camera:"M4 9a1.8 1.8 0 0 1 1.8-1.8h2L9.2 5h5.6l1.4 2.2h2A1.8 1.8 0 0 1 20 9v8.2a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 17.2zM12 16.6a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6z",
+  plus:"M12 5.5v13M5.5 12h13",
+  check:"M5 12.6l4.4 4.4L19 7.4",
+  clock:"M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM12 7.6V12l3 1.8",
+  circle:"M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17z",
+  alert:"M12 4.2l8.6 14.8H3.4zM12 10v4M12 16.7h.01",
+  bang:"M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM12 8v5M12 16h.01",
+  note:"M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM12 11v5.2M12 8h.01",
+  archive:"M4 6.2h16v3.6H4zM5.4 9.8v8.4A1.6 1.6 0 0 0 7 19.8h10a1.6 1.6 0 0 0 1.6-1.6V9.8M10 13.5h4",
+  heart:"M12 19.5S4.2 15 4.2 9.6A4 4 0 0 1 12 8a4 4 0 0 1 7.8 1.6C19.8 15 12 19.5 12 19.5z",
+  x:"M6.5 6.5l11 11M17.5 6.5l-11 11",
+  star:"M12 4.2l2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.7-4.8 2.7 1-5.4-4-3.7 5.4-.7z"
+};
+const svg=(n,z)=>'<svg viewBox="0 0 24 24" width="'+(z||18)+'" height="'+(z||18)+'" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="'+PATHS[n]+'"/></svg>';
+const IC=(n,col,small)=>'<span class="ic'+(small?" s":"")+'" style="--ic:var('+(col||"--k-c")+')">'+svg(n,small?14:17)+'</span>';
+const CATI={"人":["people","--k-o"],"物":["things","--k-g"],"金":["money","--k-b"],"情報":["info","--k-p"]};
+const catIC=(c,small)=>IC(CATI[c][0],CATI[c][1],small);
+const STI={"未着手":["circle","--muted"],"進行中":["clock","--k-c"],"完了":["check","--good"]};
+const stIC=(st,small)=>IC(STI[st][0],STI[st][1],small);
+const LVI={crit:"alert",warn:"bang",info:"note"};
+
+/* ===== 資料への参照 ===== */
+const REF={
+  must:["must","top","必須ライン9項目"],check:["check","top","行事のチェックリスト"],
+  g1:["guide","g1","ガイド① 目的を言葉に"],g2:["guide","g2","ガイド② 早めに余裕を"],g3:["guide","g3","ガイド③ 変えるのは中身"],
+  g4:["guide","g4","ガイド④ 2人休んでも回る"],g5:["guide","g5","ガイド⑤ できそう？と聞く"],
+  gc:["guide","g_check","ガイド 振り返りチェック"],start:["kangae","k_start","行事の考え方 出発点"],proc:["kangae","k_proc","行事の考え方 プロセス"],
+  after:["kangae","k_after","行事の考え方 振り返り"]
+};
+
+/* ===== 確認項目のひな形（必須ライン9＋毎回の確認11＋構想メモ・AI提案） ===== */
+function templateChecks(){
+  let n=0;
+  const c=(cat,group,text,ref,ai)=>({id:"c"+(++n),cat,group,text,done:false,note:"",ref:ref||"",ai:!!ai});
+  return [
+    c("情報","must","クラスごとに「今日見てほしい育ち」を一文で書き、プログラムに載せる","must"),
+    c("情報","must","プログラム（タイムテーブル）を掲示・配布する。当日はその場の状況をアナウンスする","must"),
+    c("情報","must","ここまでの過程をドキュメンテーションにして、園全体で掲示する","must"),
+    c("物","must","非日常の設えを最低1つ入れる（入場・旗・飾り・BGMなど）","must"),
+    c("物","must","保護者が応援・参加できる見せ場を1つ以上つくる","must"),
+    c("物","must","雨天版を晴天版と同じ細かさで作る（判断の時刻と判断者、場所、時間割）","must"),
+    c("人","must","0〜2歳の保護者にも、無理のない形で必ず見られる場を用意する","must"),
+    c("人","must","2人欠けても回る人員配置にする","g4"),
+    c("物","must","土曜に来てもらう手間に見合う時間にする","must"),
+    c("人","every","午前おやつ、給食は食べる？","check"),
+    c("人","every","それは給食室には伝えた？","check"),
+    c("人","every","保育あり？","check"),
+    c("人","every","保育時間は何時〜何時まで？","check"),
+    c("物","every","行事の計画スケジュールは？","check"),
+    c("情報","every","保護者には伝えた？","check"),
+    c("情報","every","地域は呼ぶ？","check"),
+    c("情報","every","コドモンの配信は？","check"),
+    c("情報","every","地域への挨拶文、注意喚起は？","check"),
+    c("物","every","駐車場は開ける？閉める？","check"),
+    c("人","every","有期職員の出勤は？","check"),
+    c("人","more","給食職員の出勤が確定している","g4"),
+    c("人","more","当日の保育を利用する保護者の人数を栄養士に伝えた","check"),
+    c("人","more","1家庭あたりの参加人数（何名まで）を決めた","check"),
+    c("人","more","司令塔（全体を見て連絡を受ける人）を1人決めた","after",true),
+    c("人","more","けが・急病・災害時の対応者と連絡の流れを決めた","g4",true),
+    c("物","more","行事の目的（誰に・何を・何のために）を言葉にした","g1"),
+    c("物","more","雨天時に判断する日時・判断する人・保護者への連絡方法を決めた","must",true),
+    c("物","more","係が決めてよいことと、統括・主任に確認することを係に伝えた","g3",true),
+    c("物","more","成功基準（子ども・保護者・職員）を先に決めた","after",true),
+    c("物","more","残業しないで終わる量か確認した","g5"),
+    c("物","more","次の係へ引き継ぐメモを残す","gc"),
+    c("金","more","発注するもの（何を・いつまでに・どこに）を洗い出した","check"),
+    c("金","more","記念品の発注を済ませた","check"),
+    c("情報","more","保護者へ「見てほしい育ち」と行事への想いを伝える配信を予定した","start"),
+    c("情報","more","保護者へ「SNSに上げない」「マナー」を案内した","check"),
+    c("情報","more","日常の保育から行事へつなぐ計画を、子どもに向けて立てた","start"),
+    c("情報","more","職員への伝達を、伝達ログに残した","check"),
+    c("情報","more","行事後の保護者アンケートと、結果の返し方を決めた","after",true)
+  ];
+}
+function newEvent(name,date){
+  return {id:uid(),name,date,rainDate:"",updatedAt:todayISO(),
+    purpose:{who:"",what:"",why:""},success:{child:"",parent:"",staff:""},delegate:{ok:"",ask:""},
+    team:[],lead:"",commander:"",photographer:"unset",classes:CLASSES.map(c=>c[0]),
+    kids:CLASSES.map(c=>({cls:c[0],growth:"",daily:""})),
+    checks:templateChecks(),tasks:[],
+    staff:{"正規":0,"有期":0,"パート":0},
+    places:["受付・案内","各クラスの進行","全体アナウンス","安全・けが対応","駐車場・周辺","保護者対応","司令塔"].map(n=>({name:n,need:0})),
+    care:[],familyLimit:"",childcare:"",orders:[],budget:0,overtime:[],rate:0,
+    notices:[],phrase:"",logs:[],retros:[],prevTaskCount:""};
+}
+
+/* ===== 状態 ===== */
+const PHOTO_MAX=4;          /* 伝達ログ1件あたりの写真の枚数 */
+const PHOTO_LIMIT=3500000;  /* ブラウザの保存容量の目安（文字数）。v2でGoogleドライブに移す */
+const blankLog=()=>({when:"",where:"個別",from:"",to:"",one:"",ref:"",photos:[]});
+let S={events:[],currentId:""};  /* 中身は起動時に Store.load() から入れる */
+S.ui={tab:"dash",asOf:todayISO(),fy:fyOf(todayISO()),confirmDel:"",confirmReset:false,zoom:null,doc:"must",filterOwner:"",draft:{task:{cat:"物",title:"",owner:"",start:"",due:""},log:blankLog(),retro:{cat:"人",fact:"",did:"",who:"",weeks:"",what:""},ev:{name:"冬の行事",date:""}}};
+const ev=()=>S.events.find(e=>e.id===S.currentId)||S.events[0];
+const persist=()=>{const r=Store.save({ver:2,events:S.events,currentId:S.currentId});if(r==="full"){toast("保存できませんでした。ブラウザの保存容量がいっぱいです。写真を減らしてください。",true);return false}return true};
+const touch=()=>{ev().updatedAt=todayISO();return persist()};
+const asOf=()=>S.ui.asOf||todayISO();
+
+/* ===== 年度ごとの見方 ===== */
+const evFY=e=>fyOf(e.date||asOf());
+const curFY=()=>fyOf(asOf());
+const isArchive=e=>evFY(e)<curFY();
+const isExpired=e=>isArchive(e)&&diff(keepUntil(evFY(e)),asOf())>0;
+const fyEvents=y=>S.events.filter(e=>evFY(e)===y).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9"));
+const fyList=()=>{const o=new Set(S.events.map(evFY));o.add(curFY());o.add(S.ui.fy);return Array.from(o).sort((a,b)=>b-a)};
+function setFY(y,quiet){S.ui.fy=y;const l=fyEvents(y);if(l.length&&!l.some(e=>e.id===S.currentId))S.currentId=l[0].id;if(!quiet)persist()}
+const photoChars=()=>S.events.reduce((a,e)=>a+(e.logs||[]).reduce((b,l)=>b+(l.photos||[]).reduce((c,p)=>c+p.length,0),0),0)+S.ui.draft.log.photos.reduce((c,p)=>c+p.length,0);
+const photoCount=e=>(e.logs||[]).reduce((b,l)=>b+(l.photos||[]).length,0);
+
+/* ===== 計算 ===== */
+function stat(e){const o={};CATS.forEach(c=>{const ts=e.tasks.filter(t=>t.cat===c),cs=e.checks.filter(k=>k.cat===c);const total=ts.length+cs.length;const done=ts.filter(t=>t.status==="完了").length+cs.filter(k=>k.done).length;o[c]={total,done,pct:total?Math.round(done/total*100):0}});return o}
+function judge(e){const att=Object.keys(e.staff).reduce((a,k)=>a+(+e.staff[k]||0),0);const need=e.places.reduce((a,p)=>a+(+p.need||0),0);const left=att-2-need;return {att,need,left,state:left<0?"short":left===0?"tight":"ok"}}
+function overdue(e){return e.tasks.filter(t=>t.status!=="完了"&&t.due&&diff(t.due,asOf())>0)}
+function soon(e){return e.tasks.filter(t=>t.status!=="完了"&&t.due&&diff(asOf(),t.due)>=0&&diff(asOf(),t.due)<=7)}
+function orderTotal(e){return e.orders.reduce((a,o)=>a+(+o.amount||0),0)}
+function otTotal(e){return e.overtime.reduce((a,o)=>a+(+o.hours||0),0)}
+function alerts(e){
+  const a=[];
+  if(isArchive(e)){
+    if(isExpired(e))a.push({lv:"warn",text:"保管期間を過ぎています（"+ymLabel(keepUntil(evFY(e)))+"まで）。消すかどうかは園長が判断します。自動では消えません。",go:"list"});
+    a.push({lv:"info",text:evFY(e)+"年度の行事です（アーカイブ）。保管は"+ymLabel(keepUntil(evFY(e)))+"までです。",go:"list"});
+    return a;
+  }
+  overdue(e).forEach(t=>a.push({lv:"crit",text:"期限が過ぎています：「"+t.title+"」（"+fmt(t.due)+"・"+t.owner+"）",go:"tasks"}));
+  soon(e).forEach(t=>a.push({lv:"warn",text:"7日以内：「"+t.title+"」（"+fmt(t.due)+"・"+t.owner+"）",go:"tasks"}));
+  const j=judge(e);
+  if(j.state==="short")a.push({lv:"crit",text:"2人欠けると人員が足りません（あと"+(-j.left)+"人）",go:"people"});
+  if(j.state==="tight")a.push({lv:"warn",text:"2人欠けると、配置の余りがありません",go:"people"});
+  if(!e.commander)a.push({lv:"warn",text:"司令塔（全体を見て連絡を受ける人）が決まっていません",go:"people"});
+  if(e.photographer==="unset")a.push({lv:"warn",text:"カメラマンが来るかどうかが未確認です",go:"people"});
+  if(e.budget>0&&orderTotal(e)>e.budget)a.push({lv:"crit",text:"発注の合計が予算を超えています",go:"money"});
+  const st=diff(e.updatedAt,asOf());
+  if(st>7)a.push({lv:"warn",text:"最終更新から"+st+"日たっています。止まっていませんか？",go:"dash"});
+  if(e.prevTaskCount&&e.tasks.length>Math.ceil(e.prevTaskCount*1.2))a.push({lv:"warn",text:"タスクが前回（"+e.prevTaskCount+"件）より多くなっています（"+e.tasks.length+"件）。やりたいことが増えすぎていませんか？",go:"tasks"});
+  const d=diff(asOf(),e.date||asOf());
+  if(e.date&&d<0)a.push({lv:"info",text:"本番は終了しました。振り返りを記録しましょう",go:"log"});
+  return a;
+}
+const refLink=k=>{const r=REF[k];return r?'<button class="lnk" data-act="doc" data-d="'+r[0]+'" data-i="'+r[1]+'">迷ったら → '+esc(r[2])+'</button>':""};
+
+/* ===== 部品 ===== */
+const val=p=>getP(ev(),p);
+const I=(p,o)=>{o=o||{};return '<input data-p="'+p+'" type="'+(o.t||"text")+'" value="'+esc(val(p))+'" placeholder="'+esc(o.ph||"")+'"'+(o.list?' list="'+o.list+'"':"")+'>'};
+const TA=(p,o)=>{o=o||{};return '<textarea data-p="'+p+'" rows="'+(o.r||2)+'" placeholder="'+esc(o.ph||"")+'">'+esc(val(p))+'</textarea>'};
+const CK=p=>'<input type="checkbox" data-p="'+p+'"'+(val(p)?" checked":"")+'>';
+const SEL=(p,opts)=>'<select data-p="'+p+'">'+opts.map(o=>{const v=Array.isArray(o)?o[0]:o,l=Array.isArray(o)?o[1]:o;return '<option value="'+esc(v)+'"'+(String(val(p))===String(v)?" selected":"")+'>'+esc(l)+'</option>'}).join("")+'</select>';
+const DR=(p,opts)=>{const d=getP(S.ui.draft,p);return '<input data-u="draft.'+p+'" value="'+esc(d)+'"'+(opts&&opts.ph?' placeholder="'+esc(opts.ph)+'"':"")+(opts&&opts.list?' list="'+opts.list+'"':"")+(opts&&opts.t?' type="'+opts.t+'"':"")+'>'};
+const DS=(p,opts)=>{const d=getP(S.ui.draft,p);return '<select data-u="draft.'+p+'">'+opts.map(o=>{const v=Array.isArray(o)?o[0]:o,l=Array.isArray(o)?o[1]:o;return '<option value="'+esc(v)+'"'+(v===d?" selected":"")+'>'+esc(l)+'</option>'}).join("")+'</select>'};
+const field=(label,inner)=>'<label class="field"><span>'+label+'</span>'+inner+'</label>';
+const bar=pct=>'<div class="bar"><i style="width:'+pct+'%"></i></div>';
+const chipS=s=>'<span class="chip '+(s==="完了"?"good":s==="進行中"?"acc":"")+'">'+svg(STI[s][0],12)+s+'</span>';
+const photoBtn=t=>'<label class="b2 bi">'+svg("camera",16)+'写真を足す<input class="vh" type="file" accept="image/*" multiple data-photo="'+t+'"></label>';
+const thumbs=(arr,i)=>(arr||[]).map((p,j)=>'<div class="ph"><button class="t" data-act="zoom" data-i="'+i+'" data-j="'+j+'" aria-label="写真を大きく見る"><img src="'+p+'" alt="伝達の写真"></button><button class="rm" data-act="rmPhoto" data-i="'+i+'" data-j="'+j+'" aria-label="この写真を消す">'+svg("x",12)+'</button></div>').join("");
+
+function checksBlock(e,cat){
+  const gl={must:"秋の行事の必須ライン",every:"毎回の確認（行事のチェックリスト）",more:"構想メモ・AI提案の追加項目"};
+  let h="";
+  ["must","every","more"].forEach(g=>{
+    const items=e.checks.map((k,i)=>({k,i})).filter(x=>x.k.cat===cat&&x.k.group===g);
+    if(!items.length)return;
+    h+='<div class="gtitle">'+gl[g]+'</div>';
+    items.forEach(x=>{h+='<div class="chk'+(x.k.done?" done":"")+'" id="chk_'+x.k.id+'"><input type="checkbox" data-p="checks.'+x.i+'.done"'+(x.k.done?" checked":"")+'><div class="t"><div class="tt">'+esc(x.k.text)+(x.k.ai?' <span class="chip acc">AI提案</span>':"")+" "+refLink(x.k.ref)+'</div><input type="text" data-p="checks.'+x.i+'.note" value="'+esc(x.k.note)+'" placeholder="メモ（いつ・誰に・どう決めたか）"></div></div>'});
+  });
+  return h||'<p class="empty">この分類の確認項目はありません。</p>';
+}
+
+/* ===== 画面 ===== */
+const TABS=[["list","行事一覧","list","--k-c"],["dash","ダッシュボード","dash","--k-c"],["tasks","タスクとガント","tasks","--k-c"],["people","だれが","people","--k-o"],["things","段取り","things","--k-g"],["money","お金","money","--k-b"],["info","伝えること","info","--k-p"],["log","伝達・振り返り","log","--k-c"],["docs","資料","docs","--k-c"]];
+
+function vList(){
+  const cur=ev(),y=S.ui.fy,list=fyEvents(y),arch=y<curFY();
+  const next=S.events.reduce((a,x)=>a+(x.retros||[]).filter(r=>r.who&&r.weeks!==""&&r.what).length,0);
+  let h='<div class="sec"><h2>'+IC("list")+y+'年度の行事<span class="small muted" style="font-weight:400;margin-left:10px">'+y+'年4月〜'+(y+1)+'年3月</span></h2>';
+  if(arch)h+='<div class="lock"><b>過去の年度です（アーカイブ）。</b>この年度の行事は'+ymLabel(keepUntil(y))+'まで保管します（年度が終わってから'+RETAIN_YEARS+'年）。'+(diff(keepUntil(y),asOf())>0?'<br><b>保管期間を過ぎています。</b>自動では消えません。消すかどうかは園長が判断します。':'')+'</div>';
+  if(!list.length)h+='<p class="empty">この年度の行事はまだありません。下の「次の行事を作る」から作れます。</p>';
+  h+='<div class="grid">';
+  list.forEach(e=>{const st=stat(e);const tot=CATS.reduce((a,c)=>a+st[c].total,0),dn=CATS.reduce((a,c)=>a+st[c].done,0);const pct=tot?Math.round(dn/tot*100):0;const crit=alerts(e).filter(a=>a.lv==="crit").length;const d=e.date?diff(asOf(),e.date):null;const ar=isArchive(e);
+    const sig=ar?(isExpired(e)?'<span class="chip warn">'+svg("bang",12)+'保管期間を過ぎています</span>':'<span class="chip">'+svg("archive",12)+'アーカイブ</span>'):(crit?'<span class="chip crit">'+svg("alert",12)+'赤信号 '+crit+'</span>':'<span class="chip good">'+svg("check",12)+'赤信号なし</span>');
+    const nph=photoCount(e);
+    h+='<div class="card stack"><div class="row" style="justify-content:space-between"><h3>'+esc(e.name)+'</h3>'+(e.id===cur.id?'<span class="chip acc">表示中</span>':"")+'</div><div>本番 <b>'+fmt(e.date)+'</b>'+(d==null?"":d>=0?'　あと<b class="num">'+d+'</b>日':'　終了')+'</div>'+bar(pct)+'<div class="row small"><span class="num">進み具合 '+pct+'%</span>'+sig+(nph?'<span class="muted">'+svg("camera",13)+' 写真 '+nph+'枚</span>':"")+'</div>'+(ar?'<div class="small muted">保管は'+ymLabel(keepUntil(evFY(e)))+'まで</div>':"")+
+      (S.ui.confirmDel===e.id?
+        '<div class="confirm" role="alertdialog" aria-label="削除の確認"><b>「'+esc(e.name)+'」を削除しますか？</b><span class="small">タスク '+e.tasks.length+'件・伝達ログ '+e.logs.length+'件・振り返り '+(e.retros||[]).length+'件・写真 '+nph+'枚もすべて消えます。元に戻せません。</span>'+((e.retros||[]).length?'<span class="small">振り返りの「次はこうする」は、次の行事を作るときに使います。まだ次の行事を作っていなければ、先に作ってください。</span>':"")+'<div class="row"><button class="danger" data-act="doDel" data-i="'+e.id+'">'+svg("trash",16)+'削除する</button><button class="b2" data-act="noDel">やめる</button></div></div>':
+        '<div class="row"><button class="b2 bi" data-act="open" data-i="'+e.id+'">この行事を開く</button><button class="b2 bi" data-act="askDel" data-i="'+e.id+'" aria-label="「'+esc(e.name)+'」を削除">'+svg("trash",16)+'削除</button></div>')+'</div>'});
+  h+='</div></div><div class="sec"><h2>'+IC("plus")+'次の行事を作る</h2><div class="card stack"><p class="small muted" style="margin:0">振り返りの「次はこうする」（誰が・何週間前・何を）が、新しい行事のタスクとして入ります。確認項目は、毎回のひな形から新しく始まります。個別配慮の表と写真はコピーされません。年度は本番の日で決まります（4月1日〜3月31日が1年度）。</p><div class="row">'+field("行事の名前",DR("ev.name"))+field("本番の日",DR("ev.date",{t:"date"}))+'<span class="small muted" id="fyhint"></span></div><div class="row"><button class="b" id="mk" data-act="mk"'+(S.ui.draft.ev.date?"":" disabled")+'>振り返りから '+next+' 件のタスクを入れて作る</button></div></div></div>';
+  return h;
+}
+
+function vDash(){
+  const e=ev(),st=stat(e),j=judge(e),al=alerts(e),d=e.date?diff(asOf(),e.date):null;
+  const must=e.checks.filter(k=>k.group==="must"),mustDone=must.filter(k=>k.done).length;
+  const stale=diff(e.updatedAt,asOf());
+  let h='<div class="sec"><div class="hero"><div><h1 style="font-size:22px">'+esc(e.name)+'</h1><div class="muted">本番 '+fmt(e.date)+(e.rainDate?'　予備日 '+fmt(e.rainDate):"")+'</div></div>'+
+    '<div><div class="days num">'+(d==null?"-":d>=0?d:"終了")+(d!=null&&d>=0?"<small>日後</small>":"")+'</div></div>'+
+    '<div class="small"><span class="chip '+(stale>7&&!isArchive(e)?"warn":"good")+'">最終更新 '+short(e.updatedAt)+(stale>7&&!isArchive(e)?"（"+stale+"日前）":"")+'</span>'+(isArchive(e)?' <span class="chip">'+svg("archive",12)+evFY(e)+'年度・アーカイブ</span>':' <span class="chip acc">'+evFY(e)+'年度</span>')+'</div></div></div>';
+  h+='<div class="sec"><h2>'+IC("bang","--k-o")+'いま見ること</h2>'+(al.length?'<ul class="plain">'+al.map(a=>'<li class="al '+a.lv+'"><span class="ai">'+svg(LVI[a.lv],18)+'</span><span>'+esc(a.text)+'</span><button class="lnk" data-act="go" data-i="'+a.go+'">開く</button></li>').join("")+'</ul>':'<p class="empty">いま止まっていることはありません。</p>')+'</div>';
+  h+='<div class="sec"><h2>'+IC("dash","--k-c")+'だれが・段取り・お金・伝えること の進み具合</h2><div class="grid">'+CATS.map(c=>'<div class="card"><button class="prog" data-act="go" data-i="'+({"人":"people","物":"things","金":"money","情報":"info"}[c])+'"><div class="h"><span class="bi">'+catIC(c)+'<b>'+CL[c]+'</b></span><span class="num small muted">'+st[c].done+' / '+st[c].total+'　<b style="color:var(--ink);font-size:15px">'+st[c].pct+'%</b></span></div>'+bar(st[c].pct)+'</button></div>').join("")+'</div></div>';
+  const jl={ok:["good","○ 2人欠けても回る（余り"+j.left+"人）"],tight:["warn","ぎりぎり（余りなし）"],short:["crit","× あと"+(-j.left)+"人足りない"]}[j.state];
+  const ot=otTotal(e),ob=orderTotal(e);
+  h+='<div class="sec"><h2>'+IC("dash","--k-c")+'数字で見る</h2><div class="grid">'+
+    '<div class="card tile"><div class="l">必須ライン</div><div class="v num">'+mustDone+' / '+must.length+'</div></div>'+
+    '<div class="card tile"><div class="l">人員（出勤予定−2人）</div><div class="v"><span class="chip '+jl[0]+'" style="font-size:14px">'+jl[1]+'</span></div></div>'+
+    '<div class="card tile"><div class="l">残業の合計</div><div class="v num">'+ot+'時間</div><div class="l">'+(e.rate>0?'概算 '+yen(ot*e.rate):'概算は単価を決めてから')+'</div></div>'+
+    '<div class="card tile"><div class="l">発注の合計／予算</div><div class="v num">'+yen(ob)+'</div><div class="l">予算 '+yen(e.budget)+'</div></div>'+
+    '<div class="card tile"><div class="l">タスク（前回'+(e.prevTaskCount||"-")+'件）</div><div class="v num">'+e.tasks.length+'件</div><div class="l">完了 '+e.tasks.filter(t=>t.status==="完了").length+'件</div></div></div></div>';
+  const sn=soon(e);
+  h+='<div class="sec"><h2>'+IC("clock","--k-c")+'今週（7日以内）の期限</h2>'+(sn.length?'<ul class="plain">'+sn.map(t=>'<li class="al info"><span class="ai">'+svg("clock",18)+'</span><span>'+esc(t.title)+'<br><span class="small muted">'+fmt(t.due)+'・'+esc(t.owner)+'</span></span>'+chipS(t.status)+'</li>').join("")+'</ul>':'<p class="empty">7日以内に期限のタスクはありません。</p>')+'</div>';
+  return h;
+}
+
+function ganttHTML(e,rows){const a=asOf();let h="";
+  const ds=rows.filter(x=>x.t.due);
+  if(ds.length){
+    const mn=ds.reduce((m,x)=>{const s=x.t.start||x.t.due;return s<m?s:m},ds[0].t.start||ds[0].t.due);
+    const mx=ds.reduce((m,x)=>x.t.due>m?x.t.due:m,ds[0].t.due);
+    const span=diff(mn,mx)+1;const pos=s=>diff(mn,s)/span*100;
+    const lines=[];for(let k=0;k<span;k++){const d=addDays(D(mn),k);if(d.getDay()===1)lines.push({k,lab:(d.getMonth()+1)+"/"+d.getDate()})}
+    const vl=lines.map(l=>'<i class="gv mon" style="left:'+(l.k/span*100)+'%"></i>').join("")+(diff(mn,a)>=0&&diff(a,mx)>=0?'<i class="gv today" style="left:'+pos(a)+'%"></i>':"")+(e.date&&diff(mn,e.date)>=0&&diff(e.date,mx)>=0?'<i class="gv ev" style="left:'+pos(e.date)+'%"></i>':"");
+    h+='<div class="tw card"><div class="gantt"><div class="grow gh"><div></div><div class="ghead">'+lines.map(l=>'<span style="left:'+(l.k/span*100)+'%">'+l.lab+'</span>').join("")+'</div></div>'+
+      ds.map(x=>{const t=x.t,s=t.start||t.due;const w=Math.max(1.4,(diff(s,t.due)+1)/span*100);const cls=t.status==="完了"?"done":diff(t.due,a)>0?"over":t.status==="進行中"?"":"todo";
+        return '<div class="grow"><button type="button" class="glabel" data-act="jump" data-i="'+x.i+'" data-gl="'+x.i+'" title="'+esc(t.title)+'">'+esc(t.title)+'</button><div class="gtrack" data-act="jump" data-i="'+x.i+'" title="'+esc(t.title)+'（'+short(s)+'〜'+short(t.due)+'）">'+vl+'<i class="gb '+cls+'" style="left:'+pos(s)+'%;width:'+w+'%"></i></div></div>'}).join("")+
+      '</div><p class="small muted" style="margin:8px 0 0">赤い縦線＝この日（'+fmt(a)+'）／青緑の縦線＝本番。緑＝完了、青緑＝進行中、枠だけ＝未着手、赤＝期限切れ。名前やバーを押すと、下の表のその行へ移動します。</p></div>';
+  }
+  return h}
+
+function vTasks(){
+  const e=ev(),a=asOf();
+  const ownersSet=Array.from(new Set(e.tasks.flatMap(t=>String(t.owner||"").split("・")).filter(Boolean)));
+  const f=S.ui.filterOwner;
+  const rows=e.tasks.map((t,i)=>({t,i})).filter(x=>!f||String(x.t.owner||"").indexOf(f)>=0);
+  let h='<div class="sec"><h2>'+IC("tasks","--k-c")+'タスクとガントチャート</h2><div class="row"><label class="field"><span>私のやること（絞り込み）</span><select data-u="filterOwner"><option value="">全員</option>'+ownersSet.map(o=>'<option'+(o===f?" selected":"")+'>'+esc(o)+'</option>').join("")+'</select></label></div>';
+  h+=ganttHTML(e,rows);
+  h+='<div class="tw card"><table class="ttbl"><colgroup><col><col style="width:144px"><col style="width:144px"><col style="width:184px"><col style="width:112px"><col style="width:40px"></colgroup><thead><tr><th>内容</th><th>分類</th><th>誰が</th><th>開始／期限</th><th>状態</th><th></th></tr></thead><tbody>'+
+    rows.map(x=>{const t=x.t,i=x.i;const od=t.status!=="完了"&&t.due&&diff(t.due,a)>0;return '<tr id="tr_'+i+'"'+(od?' style="background:var(--crit-bg)"':"")+'><td class="ti"><textarea class="ttl" rows="1" data-p="tasks.'+i+'.title" aria-label="内容" placeholder="何をするか">'+esc(t.title)+'</textarea>'+(t.fromRetro?'<span class="chip acc">振り返りから</span>':"")+'</td><td class="cs ca" data-l="分類"><div class="bi">'+catIC(t.cat,true)+SEL("tasks."+i+".cat",CATP)+'</div></td><td class="who" data-l="誰が"><input data-p="tasks.'+i+'.owner" list="owners" value="'+esc(t.owner)+'" title="'+esc(t.owner)+'" aria-label="誰が"></td><td class="dts"><div class="dt"><span>開始</span><input type="date" data-p="tasks.'+i+'.start" value="'+esc(t.start)+'" aria-label="開始"><span>期限</span><input type="date" data-p="tasks.'+i+'.due" value="'+esc(t.due)+'" aria-label="期限"></div></td><td class="cs st" data-l="状態"><div class="bi">'+stIC(t.status,true)+SEL("tasks."+i+".status",["未着手","進行中","完了"])+'</div></td><td class="del"><button class="x" data-act="del" data-k="tasks" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>'}).join("")+
+    '</tbody></table></div>';
+  h+='<div class="card stack"><h3>タスクを追加</h3><div class="row addt"><label class="field" style="flex:1 1 320px"><span>内容</span>'+DR("task.title")+'</label>'+field("分類",DS("task.cat",CATP))+field("誰が",DR("task.owner",{list:"owners"}))+field("開始",DR("task.start",{t:"date"}))+field("期限",DR("task.due",{t:"date"}))+'</div><div><button class="b" data-act="addTask">追加する</button></div></div></div>';
+  return h;
+}
+
+function vPeople(){
+  const e=ev(),j=judge(e);
+  const names=e.team.map(t=>t.name).filter(Boolean);
+  let h='<div class="sec"><h2>'+IC("people","--k-o")+'体制</h2><div class="tw card"><table><thead><tr><th>名前</th><th>役割</th><th></th></tr></thead><tbody>'+e.team.map((t,i)=>'<tr><td><input data-p="team.'+i+'.name" value="'+esc(t.name)+'"></td><td><input data-p="team.'+i+'.role" value="'+esc(t.role)+'"></td><td><button class="x" data-act="del" data-k="team" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+'</tbody></table><div style="margin-top:8px"><button class="b2" data-act="addTeam">行を追加</button></div></div>'+
+    '<div class="grid"><div class="card stack">'+field("主で動く人","<select data-p=\"lead\"><option value=\"\">未決定</option>"+names.map(n=>'<option'+(n===e.lead?" selected":"")+'>'+esc(n)+'</option>').join("")+"</select>")+'</div><div class="card stack">'+field("司令塔（全体を見て連絡を受ける人）","<select data-p=\"commander\"><option value=\"\">未決定</option>"+names.map(n=>'<option'+(n===e.commander?" selected":"")+'>'+esc(n)+'</option>').join("")+"</select>")+'<span class="chip acc" style="align-self:flex-start">AI提案</span></div>'+
+    '<div class="card stack"><span class="small muted"><b>カメラマン</b>（えんフォトは4月に年間で手配済み）</span><label class="row"><input type="radio" name="ph" data-p="photographer" value="yes"'+(e.photographer==="yes"?" checked":"")+'> 来る</label><label class="row"><input type="radio" name="ph" data-p="photographer" value="no"'+(e.photographer==="no"?" checked":"")+'> 来ない</label><label class="row"><input type="radio" name="ph" data-p="photographer" value="unset"'+(e.photographer==="unset"?" checked":"")+'> 未確認</label></div></div></div>';
+  h+='<div class="sec"><h2>'+IC("people","--k-o")+'参加クラス</h2><div class="card row">'+CLASSES.map(c=>'<label class="row"><input type="checkbox" data-act="cls" data-i="'+c[0]+'"'+(e.classes.indexOf(c[0])>=0?" checked":"")+'><span class="cls" style="background:var('+c[2]+')"></span>'+c[0]+'（'+c[1]+'）</label>').join("")+'</div></div>';
+  h+='<div class="sec"><h2>'+IC("people","--k-o")+'人員：2人欠けても回るか</h2><div class="grid"><div class="card stack"><b>出勤予定の人数</b>'+Object.keys(e.staff).map(k=>'<label class="row">'+k+' <input type="number" min="0" data-p="staff.'+k+'"> 人</label>').join("").replace(/data-p="staff\.([^"]+)"/g,(m,k)=>m+' value="'+(+e.staff[k]||0)+'"')+'<span class="small muted">有期・パートの出勤の有無を入れてください。</span></div>'+
+    '<div class="card stack"><b>当日の配置（必要な人数）</b>'+e.places.map((p,i)=>'<label class="row"><span style="min-width:9em">'+esc(p.name)+'</span><input type="number" min="0" data-p="places.'+i+'.need" value="'+(+p.need||0)+'"> 人</label>').join("")+'</div>'+
+    '<div class="card stack" id="judge"></div></div><div class="small">'+refLink("g4")+'</div></div>';
+  h+='<div class="sec"><h2>'+IC("people","--k-o")+'そのほか</h2><div class="grid"><div class="card stack">'+field("1家庭あたりの参加人数（何名まで）",I("familyLimit",{ph:"例：2名まで"}))+'</div><div class="card stack">'+field("当日の保育を利用する保護者（人数。栄養士に伝える）",I("childcare",{ph:"例：3家庭"}))+'</div></div></div>';
+  h+='<div class="sec"><h2>'+IC("heart","--k-o")+'個別に配慮が必要な子ども</h2><p class="small muted" style="margin:0">書くのは「当日どうするか」だけです（診断名・家庭の事情・けがの経過は書きません）。この表は、ダッシュボードや資料には出ず、次の行事にもコピーされません。</p><div class="tw card"><table><thead><tr><th>クラス</th><th>イニシャル</th><th>当日の配慮（何をするか）</th><th>担当する職員</th><th></th></tr></thead><tbody>'+e.care.map((c,i)=>'<tr><td>'+SEL("care."+i+".cls",CLASSES.map(x=>x[0]))+'</td><td><input data-p="care.'+i+'.initial" value="'+esc(c.initial)+'"></td><td><input data-p="care.'+i+'.plan" value="'+esc(c.plan)+'"></td><td><input data-p="care.'+i+'.person" value="'+esc(c.person)+'"></td><td><button class="x" data-act="del" data-k="care" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+'</tbody></table><div style="margin-top:8px"><button class="b2" data-act="addCare">行を追加</button></div></div>';
+  h+='</div><div class="sec"><h2>'+catIC("人")+'確認項目</h2><div class="card">'+checksBlock(e,"人")+'</div></div>';
+  return h;
+}
+
+function vThings(){
+  const e=ev();
+  let h='<div class="sec"><h2>'+IC("things","--k-g")+'行事の目的</h2><div class="grid">'+
+    '<div class="card stack">'+field("誰に",TA("purpose.who"))+'</div><div class="card stack">'+field("何を",TA("purpose.what"))+'</div><div class="card stack">'+field("何のために",TA("purpose.why"))+'</div></div><div class="small">'+refLink("g1")+'　'+refLink("start")+'</div></div>';
+  h+='<div class="sec"><h2>'+IC("star","--k-g")+'クラスごとの「今日見てほしい育ち」</h2><div class="tw card"><table><thead><tr><th>クラス</th><th>今日見てほしい育ち（一文）</th></tr></thead><tbody>'+e.kids.map((k,i)=>{const c=CLASSES.find(x=>x[0]===k.cls)||CLASSES[0];return '<tr><td style="white-space:nowrap"><span class="cls" style="background:var('+c[2]+')"></span>'+esc(k.cls)+'</td><td><input data-p="kids.'+i+'.growth" value="'+esc(k.growth)+'" placeholder="例：友だちと相談して決めたルールで、最後まで遊びきる姿"></td></tr>'}).join("")+'</tbody></table><p class="small" id="gcount" style="margin:8px 0 0"></p></div></div>';
+  h+='<div class="sec"><h2>'+IC("check","--k-g")+'係が決めてよいこと</h2><div class="grid"><div class="card stack">'+field("係が決めてよいこと",TA("delegate.ok",{ph:"例：種目、演出、進め方、飾りの内容"}))+'</div><div class="card stack">'+field("統括・主任に確認すること",TA("delegate.ask",{ph:"例：日時、安全、必須ラインを外す場合"}))+'</div></div><div class="small">'+refLink("g3")+'</div></div>';
+  h+='<div class="sec"><h2>'+IC("flag","--k-g")+'成功基準（先に決める）</h2><div class="grid"><div class="card stack">'+field("子ども",TA("success.child",{ph:"例：自分で選んだもの・作ったものが当日に出ていた"}))+'</div><div class="card stack">'+field("保護者",TA("success.parent",{ph:"例：「成長を感じた」の割合"}))+'</div><div class="card stack">'+field("職員",TA("success.staff",{ph:"例：楽しかった／またやりたい／自分ごとで動けた（5段階）"}))+'</div></div><div class="small">'+refLink("after")+'</div></div>';
+  h+='<div class="sec"><h2>'+catIC("物")+'確認項目</h2><div class="card">'+checksBlock(e,"物")+'</div><div class="small">'+refLink("g5")+'</div></div>';
+  return h;
+}
+
+function vMoney(){
+  const e=ev();
+  let h='<div class="sec"><h2>'+IC("money","--k-b")+'発注</h2><div class="tw card"><table><thead><tr><th>品名</th><th>発注先</th><th>期限</th><th>金額（円）</th><th>状態</th><th></th></tr></thead><tbody>'+e.orders.map((o,i)=>'<tr><td><input data-p="orders.'+i+'.name" value="'+esc(o.name)+'"></td><td><input data-p="orders.'+i+'.to" value="'+esc(o.to)+'"></td><td><input type="date" data-p="orders.'+i+'.due" value="'+esc(o.due)+'"></td><td><input type="number" min="0" data-p="orders.'+i+'.amount" value="'+(+o.amount||0)+'"></td><td>'+SEL("orders."+i+".state",["未発注","発注済み","届いた"])+'</td><td><button class="x" data-act="del" data-k="orders" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+'</tbody></table><div style="margin-top:8px"><button class="b2" data-act="addOrder">行を追加</button></div></div>'+
+    '<div class="card row"><label class="row">予算 <input type="number" min="0" data-p="budget" value="'+(+e.budget||0)+'"> 円</label><div id="ototals"></div></div></div>';
+  h+='<div class="sec"><h2>'+IC("money","--k-b")+'残業の記録</h2><div class="tw card"><table><thead><tr><th>週</th><th>のべ時間（人・時間）</th><th></th></tr></thead><tbody>'+e.overtime.map((o,i)=>'<tr><td><input data-p="overtime.'+i+'.label" value="'+esc(o.label)+'"></td><td><input type="number" min="0" step="0.5" data-p="overtime.'+i+'.hours" value="'+(+o.hours||0)+'"></td><td><button class="x" data-act="del" data-k="overtime" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+'</tbody></table><div style="margin-top:8px"><button class="b2" data-act="addOT">週を追加</button></div></div>'+
+    '<div class="card row"><label class="row">概算の単価 <input type="number" min="0" data-p="rate" value="'+(+e.rate>0?+e.rate:"")+'" placeholder="未設定"> 円／時間</label><span class="small muted">単価は保留です。あとで実際に計算して入れます（入れるまで、金額は出しません）。</span><div id="ottotals"></div></div><div class="small">'+refLink("g5")+'</div></div>';
+  h+='<div class="sec"><h2>'+catIC("金")+'確認項目</h2><div class="card">'+checksBlock(e,"金")+'</div></div>';
+  return h;
+}
+
+function vInfo(){
+  const e=ev();
+  let h='<div class="sec"><h2>'+IC("info","--k-p")+'保護者への配信予定</h2><div class="tw card"><table><thead><tr><th>何を</th><th>いつ</th><th>誰が起案</th><th>言いたい一言</th><th>園長確認済み</th><th></th></tr></thead><tbody>'+e.notices.map((n,i)=>'<tr><td><input data-p="notices.'+i+'.what" value="'+esc(n.what)+'"></td><td><input type="date" data-p="notices.'+i+'.when" value="'+esc(n.when)+'"></td><td><input data-p="notices.'+i+'.drafter" list="owners" value="'+esc(n.drafter)+'"></td><td><input data-p="notices.'+i+'.one" value="'+esc(n.one)+'" placeholder="一文だけ"></td><td style="text-align:center">'+CK("notices."+i+".ok")+'</td><td><button class="x" data-act="del" data-k="notices" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+'</tbody></table><div style="margin-top:8px"><button class="b2" data-act="addNotice">行を追加</button></div><p class="small muted" style="margin:8px 0 0">保護者への文章は、園長が確認するまで下書きです。</p></div>'+
+    '<div class="card stack">'+field("定型文（SNSに上げない・マナーなど）",TA("phrase",{r:3,ph:"例：SNSには上げないでください、という一文"}))+'</div></div>';
+  h+='<div class="sec"><h2>'+IC("info","--k-p")+'子どもへ：日常の保育から行事へのつなぎ</h2><div class="tw card"><table><thead><tr><th>クラス</th><th>日常の学びを、どう行事につなげるか</th></tr></thead><tbody>'+e.kids.map((k,i)=>{const c=CLASSES.find(x=>x[0]===k.cls)||CLASSES[0];return '<tr><td style="white-space:nowrap"><span class="cls" style="background:var('+c[2]+')"></span>'+esc(k.cls)+'</td><td><input data-p="kids.'+i+'.daily" value="'+esc(k.daily)+'"></td></tr>'}).join("")+'</tbody></table></div><div class="small">'+refLink("start")+'</div></div>';
+  h+='<div class="sec"><h2>'+catIC("情報")+'確認項目</h2><div class="card">'+checksBlock(e,"情報")+'</div></div>';
+  return h;
+}
+
+function vLog(){
+  const e=ev(),a=asOf();
+  const late=e.tasks.filter(t=>t.status!=="完了"&&t.due&&diff(t.due,a)>0).length;
+  const dr=S.ui.draft.retro;
+  let h='<div class="sec"><h2>'+IC("log","--k-c")+'伝達ログ（何をいつどこで言ったか）</h2><div class="tw card"><table><thead><tr><th>いつ</th><th>どこで</th><th>誰が</th><th>誰に</th><th>言いたい一言</th><th>資料の場所</th><th>伝わった</th><th></th></tr></thead><tbody>'+
+    e.logs.map((l,i)=>'<tr'+(l.ok?"":' style="background:var(--warn-bg)"')+'><td style="white-space:nowrap">'+esc(fmt(l.when))+'</td><td>'+esc(l.where)+'</td><td>'+esc(l.from)+'</td><td>'+esc(l.to)+'</td><td>'+esc(l.one)+((l.photos||[]).length?'<div class="photos" style="margin-top:6px">'+thumbs(l.photos,i)+'</div>':"")+'</td><td>'+esc(l.ref)+'</td><td style="text-align:center">'+CK("logs."+i+".ok")+'</td><td><button class="x" data-act="del" data-k="logs" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+
+    '</tbody></table>'+(e.logs.length?"":'<p class="empty">まだありません。</p>')+'<p class="small muted" style="margin:8px 0 0">黄色の行は「相手が自分の言葉で言い直せた」にチェックが入っていません。</p><p class="small muted" style="margin:6px 0 0" id="phuse"></p></div>'+
+    '<div class="card stack"><h3>伝達を記録する</h3><div class="row">'+field("いつ",DR("log.when",{t:"date"}))+field("どこで",DS("log.where",["幼児部会","乳児部会","昼会議","個別","紙で配布","LINE"]))+field("誰が",DR("log.from",{list:"owners"}))+field("誰に",DR("log.to",{list:"owners"}))+'</div><div class="row">'+field("言いたい一言（一文だけ）",DR("log.one"))+field("資料の場所",DR("log.ref",{ph:"リンクかファイル名"}))+'</div><div class="stack"><span class="small muted"><b>写真</b>（任意・'+PHOTO_MAX+'枚まで）撮っておきたい伝達の内容。掲示物、配置図、飾りなど。<b>子どもが写る写真は入れません。</b></span><div class="photos">'+thumbs(S.ui.draft.log.photos,"d")+(S.ui.draft.log.photos.length<PHOTO_MAX?photoBtn("draft"):"")+'</div></div><div class="small" id="onewarn"></div><div><button class="b" data-act="addLog">記録する</button></div></div></div>';
+  h+='<div class="sec"><h2>'+IC("log","--k-c")+'振り返り</h2><div class="card small">数字（自動）：期限切れのタスク <b class="num">'+late+'</b> 件／残業 <b class="num">'+otTotal(e)+'</b> 時間／発注 <b class="num">'+yen(orderTotal(e))+'</b></div>'+
+    '<ul class="plain">'+e.retros.map((r,i)=>'<li class="card stack"><div class="row" style="justify-content:space-between"><span><span class="chip acc">'+esc(CL[r.cat]||r.cat)+'</span>'+""+'</span><button class="x" data-act="del" data-k="retros" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></div><div><b>起きたこと：</b>'+esc(r.fact)+'</div><div><b>自分たちにできたこと：</b>'+esc(r.did)+'</div><div><b>次はこうする：</b>'+esc(r.who)+'が、本番の'+esc(r.weeks)+'週間前までに、'+esc(r.what)+'</div></li>').join("")+'</ul>'+
+    '<div class="card stack"><h3>振り返りを書く</h3><div class="small muted">感想ではなく事実（時刻・人数・回数）で書きます。「次はこうする」は3つそろうと保存できます。</div><div class="row">'+field("分類",DS("retro.cat",CATP))+'</div>'+field("起きたこと（事実）",'<textarea data-u="draft.retro.fact" rows="2" placeholder="例：当日9:30〜9:50に遅刻の電話が3件、別々の職員に入った">'+esc(dr.fact)+'</textarea>')+field("自分たちにできたこと","<textarea data-u=\"draft.retro.did\" rows=\"2\" placeholder=\"「天気のせい」で終わらせずに書く\">"+esc(dr.did)+"</textarea>")+
+    '<div class="row">'+field("次はこうする：誰が（役割）",DR("retro.who",{list:"owners"}))+field("本番の何週間前までに",DR("retro.weeks",{t:"number"}))+'</div>'+field("次はこうする：何をする",DR("retro.what",{ph:"例：司令塔を1人決め、電話は事務所に集める"}))+
+    '<div><button class="b" id="rbtn" data-act="addRetro" disabled>振り返りを保存する</button></div><div class="small">'+refLink("gc")+'</div></div></div>';
+  return h;
+}
+
+/* ===== 資料（本文は公開ファイルに置かない。Store.docs() から読む。正本はVaultのノート） ===== */
+const DOCS={must:"必須ライン9項目",check:"行事のチェックリスト",kangae:"行事についての考え方",guide:"行事マネジメントガイド"};
+let DOCSRC=null;
+function vDocs(){
+  const k=S.ui.doc,body=DOCSRC&&DOCSRC[k];
+  return '<div class="sec"><h2>'+IC("docs","--k-c")+'資料</h2><div class="docnav">'+Object.keys(DOCS).map(x=>'<button class="b2'+(x===k?" on":"")+'" data-act="doc" data-d="'+x+'" data-i="top">'+esc(DOCS[x])+'</button>').join("")+'</div>'+
+    (body?'<div class="doc">'+body+'<p class="src">正本はVaultのノート「'+esc(DOCS[k])+'」です。</p></div>':
+    '<div class="doc"><h2 id="top">'+esc(DOCS[k])+'</h2><p class="empty">資料はまだ読み込まれていません。</p><p class="small muted">資料の本文は、合言葉を入れたあとに読み込む作りにします（準備中）。この画面のファイルには、資料の本文を入れていません。</p></div>')+'</div>';
+}
+
+
+function sheetHTML(){
+  const e=ev(),a=asOf(),st=stat(e),j=judge(e),al=alerts(e);
+  const d=e.date?diff(a,e.date):null;
+  const must=e.checks.filter(k=>k.group==="must");
+  const rows=e.tasks.map((t,i)=>({t,i}));
+  const sorted=rows.slice().sort((x,y)=>(x.t.due||"9").localeCompare(y.t.due||"9"));
+  const jl={ok:"○ 2人欠けても回る（余り"+j.left+"人）",tight:"ぎりぎり（余りなし）",short:"× あと"+(-j.left)+"人足りない"}[j.state];
+  const ph={yes:"来る",no:"来ない",unset:"未確認"}[e.photographer]||"未確認";
+  let h='<h1 class="s-title">'+esc(e.name)+'｜進み具合シート</h1><div class="s-sub">'+evFY(e)+'年度　本番 '+fmt(e.date)+(e.rainDate?'　予備日 '+fmt(e.rainDate):"")+(d==null?"":d>=0?'　あと'+d+'日':'　終了')+'　／　この日の状況：'+fmt(a)+'　／　最終更新 '+short(e.updatedAt)+'</div>';
+  h+='<div class="s-grid">'+CATS.map(c=>'<div class="s-box"><div style="display:flex;justify-content:space-between;gap:6px"><b>'+CL[c]+'</b><span style="white-space:nowrap;font-size:8.5pt">'+st[c].done+'/'+st[c].total+'　'+st[c].pct+'%</span></div><div class="s-bar"><i style="width:'+st[c].pct+'%"></i></div></div>').join("")+'</div>';
+  h+='<table class="s-t"><tbody><tr><th>必須ライン</th><td>'+must.filter(k=>k.done).length+' / '+must.length+'</td><th>人員</th><td>'+esc(jl)+'</td><th>残業</th><td>'+otTotal(e)+'時間</td></tr><tr><th>発注／予算</th><td>'+yen(orderTotal(e))+' ／ '+yen(e.budget)+'</td><th>タスク</th><td>'+e.tasks.length+'件（完了 '+e.tasks.filter(t=>t.status==="完了").length+'件）</td><th>体制</th><td>主で動く：'+esc(e.lead||"未決定")+'／司令塔：'+esc(e.commander||"未決定")+'／カメラマン：'+ph+'</td></tr></tbody></table>';
+  h+='<div class="s-sec"><div class="s-h2">いま見ること</div>'+(al.length?'<ul class="s-al">'+al.slice(0,8).map(x=>'<li class="'+x.lv+'">'+esc(x.text)+'</li>').join("")+(al.length>8?'<li>ほか '+(al.length-8)+' 件</li>':"")+'</ul>':'<div class="small">いま止まっていることはありません。</div>')+'</div>';
+  h+='<div class="s-h2">タスク一覧（期限順）</div><table class="s-t"><thead><tr><th>内容</th><th>分類</th><th>誰が</th><th>期限</th><th>状態</th></tr></thead><tbody>'+sorted.map(x=>{const t=x.t;const od=t.status!=="完了"&&t.due&&diff(t.due,a)>0;return '<tr><td>'+esc(t.title)+'</td><td>'+esc(CL[t.cat]||t.cat)+'</td><td>'+esc(t.owner)+'</td><td style="white-space:nowrap">'+(t.due?short(t.due):"")+'</td><td style="white-space:nowrap" class="'+(od?"s-over":t.status==="完了"?"s-done":"")+'">'+(od?"期限切れ":esc(t.status))+'</td></tr>'}).join("")+'</tbody></table>';
+  h+='<div class="s-sec"><div class="s-h2">ガントチャート</div>'+ganttHTML(e,rows)+'</div>';
+  h+='<div class="s-sec"><div class="s-h2">必須ライン（'+must.filter(k=>k.done).length+' / '+must.length+'）</div><table class="s-t"><tbody>'+must.map(k=>'<tr><td style="width:1.6em;text-align:center">'+(k.done?"☑":"□")+'</td><td>'+esc(k.text)+(k.note?'<br><span style="color:#555">'+esc(k.note)+'</span>':"")+'</td></tr>').join("")+'</tbody></table></div>';
+  h+='<div class="s-foot">行事管理APP v2　印刷日 '+fmt(todayISO())+'　※個別配慮の情報は印刷に含みません。</div>';
+  return h;
+}
+function buildSheet(){const el=document.getElementById("sheet");if(el)el.innerHTML=ev()?sheetHTML():""}
+function doPrint(){if(!ev()){alert_("印刷する行事がありません。先に行事を作ってください。");return}buildSheet();try{window.print()}catch(x){}toast("印刷画面が開かない場合は、⌘P（Windowsは Ctrl+P）を押してください。どの画面からでも、共有用シートが印刷されます。")}
+
+/* ===== 描画 ===== */
+const VIEWS={list:vList,dash:vDash,tasks:vTasks,people:vPeople,things:vThings,money:vMoney,info:vInfo,log:vLog,docs:vDocs};
+function render(keepScroll){
+  const e=ev();
+  const fe=fyEvents(S.ui.fy);
+  $c("ctl").innerHTML='<label>年度 <select data-u="fy">'+fyList().map(y=>'<option value="'+y+'"'+(y===S.ui.fy?" selected":"")+'>'+y+'年度'+(y<curFY()?'（アーカイブ）':'')+'</option>').join("")+'</select></label><label>行事 <select data-u="currentId">'+(fe.length?fe.map(x=>'<option value="'+x.id+'"'+(x.id===e.id?" selected":"")+'>'+esc(x.name)+'</option>').join(""):'<option value="">（この年度の行事なし）</option>')+'</select></label><label>この日として見る <input type="date" data-u="asOf" value="'+esc(asOf())+'"></label><button class="b2" data-act="today">今日に戻す</button><button class="b bi" data-act="print">'+svg("print",16)+'印刷する（共有用シート）</button>';
+  $c("banner").innerHTML=Store.mode!=="local"?"":S.ui.confirmReset?'<span><b>このブラウザに入力したものを全部消します。</b>行事・伝達ログ・写真もすべて消えます。元に戻せません。</span><span class="row"><button class="danger" data-act="doReset">全部消す</button><button class="b2" data-act="noReset">やめる</button></span>':'<span><b>v2（準備中）。</b>入力はこのブラウザにだけ保存されます（Googleシートにつなぐまでの仮の保存です）。</span><button class="b2" data-act="askReset">全部消す</button>';
+  $c("tabs").innerHTML=TABS.map(t=>'<button class="tab" role="tab" aria-selected="'+(S.ui.tab===t[0])+'" data-act="go" data-i="'+t[0]+'">'+IC(t[2],t[3],true)+'<span>'+t[1]+'</span></button>').join("");
+  $c("owners") || 0;
+  const names=Array.from(new Set(OWNERS.concat(STAFF,e?e.team.map(t=>t.name):[]))).filter(Boolean);
+  document.getElementById("owners").innerHTML=names.map(n=>'<option value="'+esc(n)+'">').join("");
+  const y=window.scrollY;
+  $c("view").innerHTML=(S.ui.tab!=="list"&&S.ui.tab!=="docs"&&!fe.length)?'<div class="sec"><h2>'+IC("list")+'この年度の行事はありません</h2><p>'+S.ui.fy+'年度（'+S.ui.fy+'年4月〜'+(S.ui.fy+1)+'年3月）の行事はまだ作られていません。</p><div><button class="b" data-act="go" data-i="list">行事一覧へ</button></div></div>':VIEWS[S.ui.tab]();
+  const z=S.ui.zoom,zb=$c("zoom");
+  if(z&&e){const ph=z.i==="d"?S.ui.draft.log.photos:((e.logs[Number(z.i)]||{}).photos||[]);const src=ph[z.j];if(src){zb.className="on";zb.innerHTML='<div><img src="'+src+'" alt="伝達の写真（拡大）"><div class="zt">タップで閉じる</div></div>'}else{S.ui.zoom=null;zb.className="";zb.innerHTML=""}}else{zb.className="";zb.innerHTML=""}
+  derived();buildSheet();
+  fitAll();
+  if(keepScroll)window.scrollTo(0,y);
+}
+function $c(id){return document.getElementById(id)}
+/* タスクの内容欄：文章の長さに合わせて高さを変える */
+function fitTA(el){el.style.height="auto";el.style.height=(el.scrollHeight+2)+"px"}
+function fitAll(){document.querySelectorAll("textarea.ttl").forEach(fitTA)}
+window.addEventListener("resize",fitAll);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitAll);
+
+/* 入力中に再描画しないで更新する部分 */
+function derived(){
+  const e=ev();
+  const jd=$c("judge");
+  if(jd){const j=judge(e);const m={ok:["good","○ 2人欠けても回る"],tight:["warn","ぎりぎり"],short:["crit","× 足りない"]}[j.state];
+    jd.innerHTML='<b>判定</b><span class="chip '+m[0]+'" style="align-self:flex-start;font-size:15px">'+m[1]+'</span><div class="num">出勤予定 '+j.att+'人 − 2人 = '+(j.att-2)+'人<br>必要な配置 '+j.need+'人<br>'+(j.left>=0?"余り "+j.left+"人":"不足 "+(-j.left)+"人")+'</div>'}
+  const ot=$c("ototals");if(ot){const t=orderTotal(e);ot.innerHTML='<span class="num">合計 <b>'+yen(t)+'</b>　'+(e.budget>0?(t>e.budget?'<span class="chip crit">予算を超過</span>':'<span class="chip good">予算内（残り '+yen(e.budget-t)+'）</span>'):"")+'</span>'}
+  const ott=$c("ottotals");if(ott){const t=otTotal(e);ott.innerHTML='<span class="num">合計 <b>'+t+'時間</b>　'+(e.rate>0?'概算 <b>'+yen(t*e.rate)+'</b>':'<span class="chip">単価は保留</span>')+'</span>'}
+  const gc=$c("gcount");if(gc){const n=e.kids.filter(k=>String(k.growth).trim()).length;gc.innerHTML='<span class="chip '+(n===e.kids.length?"good":"warn")+'">'+n+' / '+e.kids.length+' クラス記入済み</span>　（必須ライン1）'}
+  const rb=$c("rbtn");if(rb){const r=S.ui.draft.retro;rb.disabled=!(String(r.fact).trim()&&String(r.who).trim()&&r.weeks!==""&&String(r.what).trim()&&Number(r.weeks)>=0)}
+  const ow=$c("onewarn");if(ow){const l=S.ui.draft.log.one;ow.innerHTML=l.length>40?'<span class="chip warn">長くなっています。「要するに？」を一文にしましょう（'+l.length+'字）</span>':""}
+  const mk=$c("mk");if(mk)mk.disabled=!S.ui.draft.ev.date;
+  const fh=$c("fyhint");if(fh)fh.textContent=S.ui.draft.ev.date?fyOf(S.ui.draft.ev.date)+"年度の行事になります":"";
+  const pu=$c("phuse");if(pu){const n=S.events.reduce((a,x)=>a+photoCount(x),0);pu.textContent="写真 全部で"+n+"枚・約"+(photoChars()/1e6).toFixed(1)+"MB（このブラウザに入る目安は約"+(PHOTO_LIMIT/1e6).toFixed(1)+"MB。v2ではGoogleドライブに移します）"}
+  buildSheet();
+}
+
+/* ===== 操作 ===== */
+document.addEventListener("input",function(ev_){
+  const t=ev_.target,u=t.getAttribute&&t.getAttribute("data-u");
+  if(t.classList&&t.classList.contains("ttl"))fitTA(t);
+  if(u&&u.indexOf("draft.")===0){setP(S.ui,u,t.value);derived()}
+});
+document.addEventListener("change",function(x){
+  const t=x.target;
+  if(t.type==="file"){addPhotos(t);return}
+  const p=t.getAttribute("data-p"),u=t.getAttribute("data-u"),act=t.getAttribute("data-act");
+  if(act==="cls"){const e=ev(),c=t.getAttribute("data-i");const i=e.classes.indexOf(c);if(t.checked&&i<0)e.classes.push(c);if(!t.checked&&i>=0)e.classes.splice(i,1);touch();render(true);return}
+  if(u){
+    if(u.indexOf("draft.")===0){setP(S.ui,u,t.value);derived();return}
+    if(u==="currentId"){if(t.value){S.currentId=t.value;persist()}render();return}
+    if(u==="fy"){S.ui.confirmDel="";setFY(Number(t.value));render();window.scrollTo(0,0);return}
+    S.ui[u]=t.value;if(u==="asOf"){if(!t.value)S.ui.asOf=todayISO();setFY(curFY())}render(true);return;
+  }
+  if(p){
+    let v;
+    if(t.type==="checkbox")v=t.checked;
+    else if(t.type==="radio"){if(!t.checked)return;v=t.value}
+    else if(t.type==="number")v=t.value===""?0:Number(t.value);
+    else v=t.value;
+    if(t.classList.contains("ttl")){v=v.replace(/\s*\n\s*/g," ");const gl=document.querySelector('[data-gl="'+p.split(".")[1]+'"]');if(gl){gl.textContent=v;gl.title=v}}
+    setP(ev(),p,v);touch();
+    if(t.type==="checkbox"||t.type==="radio"||t.tagName==="SELECT"||t.type==="date")render(true);else derived();
+  }
+});
+document.addEventListener("click",function(x){
+  const b=x.target.closest("[data-act]");if(!b||b.tagName==="INPUT")return;
+  const a=b.getAttribute("data-act"),i=b.getAttribute("data-i"),e=ev(),dr=S.ui.draft;
+  if(a==="go"){S.ui.tab=i;render();window.scrollTo(0,0);return}
+  if(a==="jump"){const r=$c("tr_"+i);if(r){r.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});r.classList.remove("hl");void r.offsetWidth;r.classList.add("hl")}return}
+  if(a==="open"){S.currentId=i;S.ui.tab="dash";persist();render();window.scrollTo(0,0);return}
+  if(a==="today"){S.ui.asOf=todayISO();setFY(curFY());render(true);return}
+  if(a==="askDel"){if(S.events.length<=1){alert_("行事が1件だけのときは削除できません。新しい行事を作ってから消してください。");return}S.ui.confirmDel=i;render(true);return}
+  if(a==="noDel"){S.ui.confirmDel="";render(true);return}
+  if(a==="doDel"){const k=S.events.findIndex(z=>z.id===i);if(k<0||S.events.length<=1)return;const nm=S.events[k].name;S.events.splice(k,1);S.ui.confirmDel="";
+    if(!fyEvents(S.ui.fy).length&&S.ui.fy!==curFY())S.ui.fy=evFY(S.events[0]);
+    const fl=fyEvents(S.ui.fy);if(!S.events.some(z=>z.id===S.currentId))S.currentId=(fl[0]||S.events[0]).id;
+    persist();render(true);toast("「"+nm+"」を削除しました");return}
+  if(a==="askReset"){S.ui.confirmReset=true;render(true);return}
+  if(a==="noReset"){S.ui.confirmReset=false;render(true);return}
+  if(a==="doReset"){if(Store.mode!=="local")return;Store.clear();S.events=[];S.currentId="";S.ui.tab="list";S.ui.asOf=todayISO();S.ui.confirmReset=false;S.ui.confirmDel="";S.ui.draft.log=blankLog();setFY(curFY(),true);render();return}
+  if(a==="zoom"){S.ui.zoom={i:i,j:Number(b.getAttribute("data-j"))};render(true);return}
+  if(a==="closeZoom"){S.ui.zoom=null;render(true);return}
+  if(a==="rmPhoto"){const j=Number(b.getAttribute("data-j"));if(i==="d")dr.log.photos.splice(j,1);else{const l=e.logs[Number(i)];if(l&&l.photos)l.photos.splice(j,1);touch()}render(true);return}
+  if(a==="print"){doPrint();return}
+  if(a==="doc"){S.ui.tab="docs";S.ui.doc=b.getAttribute("data-d");render();const id=b.getAttribute("data-i");const el=id&&id!=="top"?document.getElementById(id):null;if(el){el.scrollIntoView({behavior:"auto",block:"start"});el.classList.add("hl")}else window.scrollTo(0,0);return}
+  if(a==="del"){const k=b.getAttribute("data-k");e[k].splice(Number(i),1);touch();render(true);return}
+  if(a==="addTeam"){e.team.push({name:"",role:""})}
+  else if(a==="addCare"){e.care.push({cls:CLASSES[0][0],initial:"",plan:"",person:""})}
+  else if(a==="addOrder"){e.orders.push({name:"",to:"",due:"",amount:0,state:"未発注"})}
+  else if(a==="addOT"){e.overtime.push({label:"",hours:0})}
+  else if(a==="addNotice"){e.notices.push({what:"",when:"",drafter:"",one:"",ok:false})}
+  else if(a==="addTask"){const t=dr.task;if(!String(t.title).trim()||!t.due){alert_("内容と期限を入れてください");return}e.tasks.push({id:uid(),cat:t.cat,title:t.title.trim(),owner:t.owner,start:t.start||t.due,due:t.due,status:"未着手"});dr.task={cat:"物",title:"",owner:"",start:"",due:""}}
+  else if(a==="addLog"){const l=dr.log;if(!l.when||!String(l.one).trim()){alert_("いつ・言いたい一言を入れてください");return}e.logs.push({when:l.when,where:l.where,from:l.from,to:l.to,one:l.one.trim(),ref:l.ref,ok:false,photos:(l.photos||[]).slice()});if(!touch()){e.logs.pop();render(true);return}dr.log=blankLog();render(true);return}
+  else if(a==="addRetro"){const r=dr.retro;e.retros.push({cat:r.cat,fact:r.fact.trim(),did:r.did.trim(),who:r.who.trim(),weeks:Number(r.weeks),what:r.what.trim()});dr.retro={cat:"人",fact:"",did:"",who:"",weeks:"",what:""}}
+  else if(a==="mk"){
+    const src=(e&&(e.retros||[]).length?e:null)||S.events.find(z=>(z.retros||[]).length);
+    const n=newEvent(dr.ev.name.trim()||"新しい行事",dr.ev.date);
+    ((src&&src.retros)||[]).forEach(r=>{if(r.who&&r.weeks!==""&&r.what){const due=iso(addDays(D(dr.ev.date),-7*Number(r.weeks)));n.tasks.push({id:uid(),cat:r.cat,title:r.what,owner:r.who,start:due,due,status:"未着手",fromRetro:true})}});
+    S.events.push(n);S.currentId=n.id;S.ui.fy=evFY(n);S.ui.tab="tasks";dr.ev={name:"冬の行事",date:""};persist();render();window.scrollTo(0,0);return}
+  else return;
+  touch();render(true);
+});
+function shrink(f){return new Promise(function(res){
+  const fr=new FileReader();fr.onerror=function(){res(null)};
+  fr.onload=function(){const im=new Image();im.onerror=function(){res(null)};
+    im.onload=function(){try{const M=1200,r=Math.min(1,M/Math.max(im.naturalWidth,im.naturalHeight));const w=Math.max(1,Math.round(im.naturalWidth*r)),h=Math.max(1,Math.round(im.naturalHeight*r));const c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,w,h);g.drawImage(im,0,0,w,h);res(c.toDataURL("image/jpeg",0.6))}catch(z){res(null)}};
+    im.src=fr.result};
+  fr.readAsDataURL(f)})}
+function addPhotos(inp){
+  const tgt=inp.getAttribute("data-photo"),files=Array.from(inp.files||[]);inp.value="";
+  if(!files.length)return;
+  const e=ev();
+  const arrOf=function(){if(tgt==="draft")return S.ui.draft.log.photos;const l=e.logs[Number(tgt.slice(4))];if(!l)return null;if(!l.photos)l.photos=[];return l.photos};
+  let chain=Promise.resolve();
+  files.forEach(function(f){chain=chain.then(function(){return shrink(f)}).then(function(url){
+    const arr=arrOf();if(!arr)return;
+    if(arr.length>=PHOTO_MAX){alert_("写真は1件につき"+PHOTO_MAX+"枚までです");return}
+    if(!url){alert_("写真を読み込めませんでした");return}
+    if(photoChars()+url.length>PHOTO_LIMIT){alert_("保存できる容量がいっぱいです。使っていない写真を消してください");return}
+    arr.push(url);
+    if(tgt!=="draft"&&!touch())arr.pop()})});
+  chain.then(function(){render(true)})}
+document.addEventListener("keydown",function(k){if(k.key==="Escape"&&S.ui.zoom){S.ui.zoom=null;render(true)}});
+/* 内容欄のEnterは改行せず確定（日本語の変換中のEnterはそのまま） */
+document.addEventListener("keydown",function(k){if(k.key==="Enter"&&!k.isComposing&&k.keyCode!==229&&k.target.classList&&k.target.classList.contains("ttl")){k.preventDefault();k.target.blur()}});
+function toast(msg,bad){const el=document.createElement("div");el.className="toast";el.style.cssText="border-radius:8px;padding:10px 14px;font-size:13px;border:1px solid "+(bad?"var(--crit)":"var(--accent-text)")+";background:"+(bad?"var(--crit-bg)":"var(--accent-bg)")+";color:"+(bad?"var(--crit)":"var(--accent-text)");el.textContent=msg;document.body.appendChild(el);setTimeout(function(){el.remove()},5000)}
+function alert_(m){toast(m,true)}
+
+window.addEventListener("beforeprint",buildSheet);
+/* ===== 起動：データ・資料・呼び名を store.js から読む ===== */
+Promise.all([Store.load(),Store.docs(),Store.owners()]).then(function(r){
+  const l=r[0];
+  S.events=l&&Array.isArray(l.events)?l.events:[];
+  S.currentId=(l&&l.currentId)||(S.events[0]||{}).id||"";
+  DOCSRC=r[1]||null;
+  STAFF=Array.isArray(r[2])?r[2]:[];
+  if(!S.events.length)S.ui.tab="list";
+  setFY(curFY(),true);
+  render();
+}).catch(function(){$c("view").innerHTML='<p class="empty">データを読み込めませんでした。時間をおいて開き直してください。</p>'});
+})();
+</script>
+</body>
+</html>
