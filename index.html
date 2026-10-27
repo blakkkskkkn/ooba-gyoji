@@ -315,20 +315,20 @@ const REF={
   after:["kangae","k_after","行事の考え方 振り返り"]
 };
 
-/* ===== 確認項目のひな形（必須ライン9＋毎回の確認11＋追加の確認項目） ===== */
+/* ===== 確認項目のひな形（すべて「毎回の確認」。行事ごとに任意で足せる） ===== */
 function templateChecks(){
   let n=0;
   const c=(cat,group,text,ref,ai)=>({id:"c"+(++n),cat,group,text,done:false,note:"",ref:ref||"",ai:!!ai});
   return [
-    c("情報","must","クラスごとに「今日見てほしい育ち」を一文で書き、プログラムに載せる","must"),
-    c("情報","must","プログラム（タイムテーブル）を掲示・配布する。当日はその場の状況をアナウンスする","must"),
-    c("情報","must","ここまでの過程をドキュメンテーションにして、園全体で掲示する","must"),
-    c("物","must","非日常の設えを最低1つ入れる（入場・旗・飾り・BGMなど）","must"),
-    c("物","must","保護者が応援・参加できる見せ場を1つ以上つくる","must"),
-    c("物","must","雨天版を晴天版と同じ細かさで作る（判断の時刻と判断者、場所、時間割）","must"),
-    c("人","must","0〜2歳の保護者にも、無理のない形で必ず見られる場を用意する","must"),
-    c("人","must","2人欠けても回る人員配置にする","g4"),
-    c("物","must","土曜に来てもらう手間に見合う時間にする","must"),
+    c("情報","every","クラスごとに「今日見てほしい育ち」を一文で書き、プログラムに載せる","must"),
+    c("情報","every","プログラム（タイムテーブル）を掲示・配布する。当日はその場の状況をアナウンスする","must"),
+    c("情報","every","ここまでの過程をドキュメンテーションにして、園全体で掲示する","must"),
+    c("物","every","非日常の設えを最低1つ入れる（入場・旗・飾り・BGMなど）","must"),
+    c("物","every","保護者が応援・参加できる見せ場を1つ以上つくる","must"),
+    c("物","every","雨天版を晴天版と同じ細かさで作る（判断の時刻と判断者、場所、時間割）","must"),
+    c("人","every","0〜2歳の保護者にも、無理のない形で必ず見られる場を用意する","must"),
+    c("人","every","2人欠けても回る人員配置にする","g4"),
+    c("物","every","土曜に来てもらう手間に見合う時間にする","must"),
     c("人","every","午前おやつ、給食は食べる？","check"),
     c("人","every","それは給食室には伝えた？","check"),
     c("人","every","保育あり？","check"),
@@ -340,24 +340,24 @@ function templateChecks(){
     c("情報","every","地域への挨拶文、注意喚起は？","check"),
     c("物","every","駐車場は開ける？閉める？","check"),
     c("人","every","有期職員の出勤は？","check"),
-    c("人","more","給食職員の出勤が確定している","g4"),
-    c("人","more","当日の保育を利用する保護者の人数を栄養士に伝えた","check"),
-    c("人","more","1家庭あたりの参加人数（何名まで）を決めた","check"),
-    c("人","more","司令塔（全体を見て連絡を受ける人）を1人決めた","after",true),
-    c("人","more","けが・急病・災害時の対応者と連絡の流れを決めた","g4",true),
-    c("物","more","行事の目的（誰に・何を・何のために）を言葉にした","g1"),
-    c("物","more","雨天時に判断する日時・判断する人・保護者への連絡方法を決めた","must",true),
-    c("物","more","係が決めてよいことと、統括・主任に確認することを係に伝えた","g3",true),
-    c("物","more","成功基準（子ども・保護者・職員）を先に決めた","after",true),
-    c("物","more","残業しないで終わる量か確認した","g5"),
-    c("物","more","次の係へ引き継ぐメモを残す","gc"),
-    c("金","more","発注するもの（何を・いつまでに・どこに）を洗い出した","check"),
-    c("金","more","記念品の発注を済ませた","check"),
-    c("情報","more","保護者へ「見てほしい育ち」と行事への想いを伝える配信を予定した","start"),
-    c("情報","more","保護者へ「SNSに上げない」「マナー」を案内した","check"),
-    c("情報","more","日常の保育から行事へつなぐ計画を、子どもに向けて立てた","start"),
-    c("情報","more","職員への伝達を、伝達ログに残した","check"),
-    c("情報","more","行事後の保護者アンケートと、結果の返し方を決めた","after",true)
+    c("人","every","給食職員の出勤が確定している","g4"),
+    c("人","every","当日の保育を利用する人数を栄養士に伝えた","check"),
+    c("人","every","1家庭あたりの参加人数（何名まで）を決めた","check"),
+    c("人","every","司令塔（全体を見て連絡を受ける人）を1人決めた","after",true),
+    c("人","every","けが・急病・災害時の対応者と連絡の流れを決めた","g4",true),
+    c("物","every","行事の目的（誰に・何を・何のために）を言葉にした","g1"),
+    c("物","every","雨天時に判断する日時・判断する人・保護者への連絡方法を決めた","must",true),
+    c("物","every","係が決めてよいことと、統括・主任に確認することを係に伝えた","g3",true),
+    c("物","every","成功基準（子ども・保護者・職員）を先に決めた","after",true),
+    c("物","every","残業しないで終わる量か確認した","g5"),
+    c("物","every","次の係へ引き継ぐメモを残す","gc"),
+    c("金","every","発注するもの（何を・いつまでに・どこに）を洗い出した","check"),
+    c("金","every","記念品の発注を済ませた","check"),
+    c("情報","every","保護者へ「見てほしい育ち」と行事への想いを伝える配信を予定した","start"),
+    c("情報","every","保護者へ「SNSに上げない」「マナー」を案内した","check"),
+    c("情報","every","日常の保育から行事へつなぐ計画を、子どもに向けて立てた","start"),
+    c("情報","every","職員への伝達を、伝達ログに残した","check"),
+    c("情報","every","行事後の保護者アンケートと、結果の返し方を決めた","after",true)
   ];
 }
 function newEvent(name,date){
@@ -377,7 +377,7 @@ const PHOTO_MAX=4;          /* 伝達ログ1件あたりの写真の枚数 */
 const PHOTO_LIMIT=3500000;  /* ブラウザの保存容量の目安（文字数）。v2でGoogleドライブに移す */
 const blankLog=()=>({when:"",where:"個別",from:"",to:"",one:"",ref:"",photos:[]});
 let S={events:[],currentId:""};  /* 中身は起動時に Store.load() から入れる */
-S.ui={tab:"dash",asOf:todayISO(),fy:fyOf(todayISO()),confirmDel:"",confirmReset:false,zoom:null,doc:"must",filterOwner:"",draft:{task:{cat:"物",title:"",owner:"",start:"",due:""},log:blankLog(),retro:{cat:"人",fact:"",did:"",who:"",weeks:"",what:""},ev:{name:"冬の行事",date:""}}};
+S.ui={tab:"dash",asOf:todayISO(),fy:fyOf(todayISO()),confirmDel:"",confirmReset:false,zoom:null,doc:"must",filterOwner:"",draft:{task:{cat:"物",title:"",owner:"",start:"",due:""},log:blankLog(),retro:{cat:"人",fact:"",did:"",who:"",weeks:"",what:""},ev:{name:"冬の行事",date:""},chk:{"人":"","物":"","金":"","情報":""},place:""}};
 const ev=()=>S.events.find(e=>e.id===S.currentId)||S.events[0];
 const persist=()=>{const r=Store.save({ver:2,events:S.events,currentId:S.currentId});if(r==="full"){toast("保存できませんでした。ブラウザの保存容量がいっぱいです。写真を減らしてください。",true);return false}return true};
 const touch=()=>{ev().updatedAt=todayISO();return persist()};
@@ -396,6 +396,7 @@ const photoCount=e=>(e.logs||[]).reduce((b,l)=>b+(l.photos||[]).length,0);
 
 /* ===== 計算 ===== */
 function stat(e){const o={};CATS.forEach(c=>{const ts=e.tasks.filter(t=>t.cat===c),cs=e.checks.filter(k=>k.cat===c);const total=ts.length+cs.length;const done=ts.filter(t=>t.status==="完了").length+cs.filter(k=>k.done).length;o[c]={total,done,pct:total?Math.round(done/total*100):0}});return o}
+const chkCount=(e,c)=>{const cs=e.checks.filter(k=>k.cat===c);return cs.filter(k=>k.done).length+" / "+cs.length};
 function judge(e){const att=Object.keys(e.staff).reduce((a,k)=>a+(+e.staff[k]||0),0);const need=e.places.reduce((a,p)=>a+(+p.need||0),0);const left=att-2-need;return {att,need,left,state:left<0?"short":left===0?"tight":"ok"}}
 function overdue(e){return e.tasks.filter(t=>t.status!=="完了"&&t.due&&diff(t.due,asOf())>0)}
 function soon(e){return e.tasks.filter(t=>t.status!=="完了"&&t.due&&diff(asOf(),t.due)>=0&&diff(asOf(),t.due)<=7)}
@@ -440,15 +441,13 @@ const photoBtn=t=>'<label class="b2 bi">'+svg("camera",16)+'写真を足す<inpu
 const thumbs=(arr,i)=>(arr||[]).map((p,j)=>'<div class="ph"><button class="t" data-act="zoom" data-i="'+i+'" data-j="'+j+'" aria-label="写真を大きく見る"><img '+phAttr(p)+' alt="伝達の写真"></button><button class="rm" data-act="rmPhoto" data-i="'+i+'" data-j="'+j+'" aria-label="この写真を消す">'+svg("x",12)+'</button></div>').join("");
 
 function checksBlock(e,cat){
-  const gl={must:"秋の行事の必須ライン",every:"毎回の確認（行事のチェックリスト）",more:"追加の確認項目"};
-  let h="";
-  ["must","every","more"].forEach(g=>{
-    const items=e.checks.map((k,i)=>({k,i})).filter(x=>x.k.cat===cat&&x.k.group===g);
-    if(!items.length)return;
-    h+='<div class="gtitle">'+gl[g]+'</div>';
-    items.forEach(x=>{h+='<div class="chk'+(x.k.done?" done":"")+'" id="chk_'+x.k.id+'"><input type="checkbox" data-p="checks.'+x.i+'.done"'+(x.k.done?" checked":"")+'><div class="t"><div class="tt">'+esc(x.k.text)+" "+refLink(x.k.ref)+'</div><input type="text" data-p="checks.'+x.i+'.note" value="'+esc(x.k.note)+'" placeholder="メモ（いつ・誰に・どう決めたか）"></div></div>'});
-  });
-  return h||'<p class="empty">この分類の確認項目はありません。</p>';
+  const items=e.checks.map((k,i)=>({k,i})).filter(x=>x.k.cat===cat);
+  let h='<div class="gtitle">毎回の確認（行事のチェックリスト）</div>';
+  if(!items.length)h+='<p class="empty">この分類の確認項目はありません。</p>';
+  items.forEach(x=>{h+='<div class="chk'+(x.k.done?" done":"")+'" id="chk_'+x.k.id+'"><input type="checkbox" data-p="checks.'+x.i+'.done"'+(x.k.done?" checked":"")+'><div class="t"><div class="tt">'+esc(x.k.text)+" "+refLink(x.k.ref)+'</div><input type="text" data-p="checks.'+x.i+'.note" value="'+esc(x.k.note)+'" placeholder="メモ（いつ・誰に・どう決めたか）"></div>'+(x.k.custom?'<button class="x" data-act="del" data-k="checks" data-i="'+x.i+'" aria-label="この確認項目を削除">'+svg("trash",16)+'</button>':"")+'</div>'});
+  /* 行事ごとに任意で足す。足した項目だけ消せる */
+  h+='<div class="row" style="margin-top:10px;align-items:flex-end"><label class="field" style="flex:1 1 260px"><span>確認項目を追加</span>'+DR("chk."+cat,{ph:"この行事で確認したいこと"})+'</label><button class="b2" data-act="addCheck" data-i="'+cat+'">追加する</button></div>';
+  return h;
 }
 
 /* ===== 画面 ===== */
@@ -474,7 +473,6 @@ function vList(){
 
 function vDash(){
   const e=ev(),st=stat(e),j=judge(e),al=alerts(e),d=e.date?diff(asOf(),e.date):null;
-  const must=e.checks.filter(k=>k.group==="must"),mustDone=must.filter(k=>k.done).length;
   const stale=diff(e.updatedAt,asOf());
   let h='<div class="sec"><div class="hero"><div><h1 style="font-size:22px">'+esc(e.name)+'</h1><div class="muted">本番 '+fmt(e.date)+(e.rainDate?'　予備日 '+fmt(e.rainDate):"")+'</div></div>'+
     '<div><div class="days num">'+(d==null?"-":d>=0?d:"終了")+(d!=null&&d>=0?"<small>日後</small>":"")+'</div></div>'+
@@ -484,7 +482,7 @@ function vDash(){
   const jl={ok:["good","○ 2人欠けても回る（余り"+j.left+"人）"],tight:["warn","ぎりぎり（余りなし）"],short:["crit","× あと"+(-j.left)+"人足りない"]}[j.state];
   const ot=otTotal(e),ob=orderTotal(e);
   h+='<div class="sec"><h2>'+IC("dash","--k-c")+'数字で見る</h2><div class="grid">'+
-    '<div class="card tile"><div class="l">必須ライン</div><div class="v num">'+mustDone+' / '+must.length+'</div></div>'+
+    '<div class="card tile"><div class="l">確認項目（済／全体）</div><div class="small">'+CATS.map(c=>CL[c]+' <b class="num">'+chkCount(e,c)+'</b>').join("<br>")+'</div></div>'+
     '<div class="card tile"><div class="l">人員（出勤予定−2人）</div><div class="v"><span class="chip '+jl[0]+'" style="font-size:14px">'+jl[1]+'</span></div></div>'+
     '<div class="card tile"><div class="l">残業の合計</div><div class="v num">'+ot+'時間</div><div class="l">'+(e.rate>0?'概算 '+yen(ot*e.rate):'概算は単価を決めてから')+'</div></div>'+
     '<div class="card tile"><div class="l">発注の合計／予算</div><div class="v num">'+yen(ob)+'</div><div class="l">予算 '+yen(e.budget)+'</div></div>'+
@@ -525,15 +523,15 @@ function vTasks(){
 
 function vPeople(){
   const e=ev(),j=judge(e);
-  const names=e.team.map(t=>t.name).filter(Boolean);
-  let h='<div class="sec"><h2>'+IC("people","--k-o")+'体制</h2><div class="tw card"><table><thead><tr><th>名前</th><th>役割</th><th></th></tr></thead><tbody>'+e.team.map((t,i)=>'<tr><td><input data-p="team.'+i+'.name" value="'+esc(t.name)+'"></td><td><input data-p="team.'+i+'.role" value="'+esc(t.role)+'"></td><td><button class="x" data-act="del" data-k="team" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+'</tbody></table><div style="margin-top:8px"><button class="b2" data-act="addTeam">行を追加</button></div></div>'+
+  const names=Array.from(new Set(STAFF.concat(e.team.map(t=>t.name),[e.lead,e.commander]))).filter(Boolean);
+  let h='<div class="sec"><h2>'+IC("people","--k-o")+'体制</h2><div class="tw card"><table><thead><tr><th>名前</th><th>役割</th><th></th></tr></thead><tbody>'+e.team.map((t,i)=>'<tr><td><input data-p="team.'+i+'.name" list="owners" value="'+esc(t.name)+'"></td><td><input data-p="team.'+i+'.role" value="'+esc(t.role)+'"></td><td><button class="x" data-act="del" data-k="team" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+'</tbody></table><div style="margin-top:8px"><button class="b2" data-act="addTeam">行を追加</button></div></div>'+
     '<div class="grid"><div class="card stack">'+field("主で動く人","<select data-p=\"lead\"><option value=\"\">未決定</option>"+names.map(n=>'<option'+(n===e.lead?" selected":"")+'>'+esc(n)+'</option>').join("")+"</select>")+'</div><div class="card stack">'+field("司令塔（全体を見て連絡を受ける人）","<select data-p=\"commander\"><option value=\"\">未決定</option>"+names.map(n=>'<option'+(n===e.commander?" selected":"")+'>'+esc(n)+'</option>').join("")+"</select>")+'</div>'+
     '<div class="card stack"><span class="small muted"><b>カメラマン</b>（えんフォトは4月に年間で手配済み）</span><label class="row"><input type="radio" name="ph" data-p="photographer" value="yes"'+(e.photographer==="yes"?" checked":"")+'> 来る</label><label class="row"><input type="radio" name="ph" data-p="photographer" value="no"'+(e.photographer==="no"?" checked":"")+'> 来ない</label><label class="row"><input type="radio" name="ph" data-p="photographer" value="unset"'+(e.photographer==="unset"?" checked":"")+'> 未確認</label></div></div></div>';
   h+='<div class="sec"><h2>'+IC("people","--k-o")+'参加クラス</h2><div class="card row">'+CLASSES.map(c=>'<label class="row"><input type="checkbox" data-act="cls" data-i="'+c[0]+'"'+(e.classes.indexOf(c[0])>=0?" checked":"")+'><span class="cls" style="background:var('+c[2]+')"></span>'+c[0]+'（'+c[1]+'）</label>').join("")+'</div></div>';
   h+='<div class="sec"><h2>'+IC("people","--k-o")+'人員：2人欠けても回るか</h2><div class="grid"><div class="card stack"><b>出勤予定の人数</b>'+Object.keys(e.staff).map(k=>'<label class="row">'+k+' <input type="number" min="0" data-p="staff.'+k+'"> 人</label>').join("").replace(/data-p="staff\.([^"]+)"/g,(m,k)=>m+' value="'+(+e.staff[k]||0)+'"')+'<span class="small muted">有期・パートの出勤の有無を入れてください。</span></div>'+
-    '<div class="card stack"><b>当日の配置（必要な人数）</b>'+e.places.map((p,i)=>'<label class="row"><span style="min-width:9em">'+esc(p.name)+'</span><input type="number" min="0" data-p="places.'+i+'.need" value="'+(+p.need||0)+'"> 人</label>').join("")+'</div>'+
+    '<div class="card stack"><b>当日の配置（必要な人数）</b>'+e.places.map((p,i)=>'<label class="row"><span style="min-width:9em">'+esc(p.name)+'</span><input type="number" min="0" data-p="places.'+i+'.need" value="'+(+p.need||0)+'"> 人'+(p.custom?'<button class="x" data-act="del" data-k="places" data-i="'+i+'" aria-label="この配置を削除">'+svg("trash",16)+'</button>':"")+'</label>').join("")+'<div class="row" style="margin-top:4px">'+DR("place",{ph:"配置を追加（名前）"})+'<button class="b2" data-act="addPlace">追加する</button></div></div>'+
     '<div class="card stack" id="judge"></div></div><div class="small">'+refLink("g4")+'</div></div>';
-  h+='<div class="sec"><h2>'+IC("people","--k-o")+'そのほか</h2><div class="grid"><div class="card stack">'+field("1家庭あたりの参加人数（何名まで）",I("familyLimit",{ph:"例：2名まで"}))+'</div><div class="card stack">'+field("当日の保育を利用する保護者（人数。栄養士に伝える）",I("childcare",{ph:"例：3家庭"}))+'</div></div></div>';
+  h+='<div class="sec"><h2>'+IC("people","--k-o")+'そのほか</h2><div class="grid"><div class="card stack">'+field("1家庭あたりの参加人数（何名まで）",I("familyLimit",{ph:"例：2名まで"}))+'</div><div class="card stack">'+field("当日の保育を利用する人数（栄養士に伝える）",I("childcare",{ph:"例：5人（0歳1人・2歳2人・4歳2人）"}))+'</div></div></div>';
   h+='<div class="sec"><h2>'+IC("heart","--k-o")+'個別に配慮が必要な子ども</h2><p class="small muted" style="margin:0">書くのは「当日どうするか」だけです（診断名・家庭の事情・けがの経過は書きません）。この表は、ダッシュボードや資料には出ず、次の行事にもコピーされません。</p><div class="tw card"><table><thead><tr><th>クラス</th><th>イニシャル</th><th>当日の配慮（何をするか）</th><th>担当する職員</th><th></th></tr></thead><tbody>'+e.care.map((c,i)=>'<tr><td>'+SEL("care."+i+".cls",CLASSES.map(x=>x[0]))+'</td><td><input data-p="care.'+i+'.initial" value="'+esc(c.initial)+'"></td><td><input data-p="care.'+i+'.plan" value="'+esc(c.plan)+'"></td><td><input data-p="care.'+i+'.person" value="'+esc(c.person)+'"></td><td><button class="x" data-act="del" data-k="care" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+'</tbody></table><div style="margin-top:8px"><button class="b2" data-act="addCare">行を追加</button></div></div>';
   h+='</div><div class="sec"><h2>'+catIC("人")+'確認項目</h2><div class="card">'+checksBlock(e,"人")+'</div></div>';
   return h;
@@ -599,18 +597,16 @@ function vDocs(){
 function sheetHTML(){
   const e=ev(),a=asOf(),st=stat(e),j=judge(e),al=alerts(e);
   const d=e.date?diff(a,e.date):null;
-  const must=e.checks.filter(k=>k.group==="must");
   const rows=e.tasks.map((t,i)=>({t,i}));
   const sorted=rows.slice().sort((x,y)=>(x.t.due||"9").localeCompare(y.t.due||"9"));
   const jl={ok:"○ 2人欠けても回る（余り"+j.left+"人）",tight:"ぎりぎり（余りなし）",short:"× あと"+(-j.left)+"人足りない"}[j.state];
   const ph={yes:"来る",no:"来ない",unset:"未確認"}[e.photographer]||"未確認";
   let h='<h1 class="s-title">'+esc(e.name)+'｜進み具合シート</h1><div class="s-sub">'+evFY(e)+'年度　本番 '+fmt(e.date)+(e.rainDate?'　予備日 '+fmt(e.rainDate):"")+(d==null?"":d>=0?'　あと'+d+'日':'　終了')+'　／　この日の状況：'+fmt(a)+'　／　最終更新 '+short(e.updatedAt)+'</div>';
   h+='<div class="s-grid">'+CATS.map(c=>'<div class="s-box"><div style="display:flex;justify-content:space-between;gap:6px"><b>'+CL[c]+'</b><span style="white-space:nowrap;font-size:8.5pt">'+st[c].done+'/'+st[c].total+'　'+st[c].pct+'%</span></div><div class="s-bar"><i style="width:'+st[c].pct+'%"></i></div></div>').join("")+'</div>';
-  h+='<table class="s-t"><tbody><tr><th>必須ライン</th><td>'+must.filter(k=>k.done).length+' / '+must.length+'</td><th>人員</th><td>'+esc(jl)+'</td><th>残業</th><td>'+otTotal(e)+'時間</td></tr><tr><th>発注／予算</th><td>'+yen(orderTotal(e))+' ／ '+yen(e.budget)+'</td><th>タスク</th><td>'+e.tasks.length+'件（完了 '+e.tasks.filter(t=>t.status==="完了").length+'件）</td><th>体制</th><td>主で動く：'+esc(e.lead||"未決定")+'／司令塔：'+esc(e.commander||"未決定")+'／カメラマン：'+ph+'</td></tr></tbody></table>';
+  h+='<table class="s-t"><tbody><tr><th>確認項目</th><td>'+CATS.map(c=>CL[c]+' '+chkCount(e,c)).join("・")+'</td><th>人員</th><td>'+esc(jl)+'</td><th>残業</th><td>'+otTotal(e)+'時間</td></tr><tr><th>発注／予算</th><td>'+yen(orderTotal(e))+' ／ '+yen(e.budget)+'</td><th>タスク</th><td>'+e.tasks.length+'件（完了 '+e.tasks.filter(t=>t.status==="完了").length+'件）</td><th>体制</th><td>主で動く：'+esc(e.lead||"未決定")+'／司令塔：'+esc(e.commander||"未決定")+'／カメラマン：'+ph+'</td></tr></tbody></table>';
   h+='<div class="s-sec"><div class="s-h2">いま見ること</div>'+(al.length?'<ul class="s-al">'+al.slice(0,8).map(x=>'<li class="'+x.lv+'">'+esc(x.text)+'</li>').join("")+(al.length>8?'<li>ほか '+(al.length-8)+' 件</li>':"")+'</ul>':'<div class="small">いま止まっていることはありません。</div>')+'</div>';
   h+='<div class="s-h2">タスク一覧（期限順）</div><table class="s-t"><thead><tr><th>内容</th><th>分類</th><th>誰が</th><th>期限</th><th>状態</th></tr></thead><tbody>'+sorted.map(x=>{const t=x.t;const od=t.status!=="完了"&&t.due&&diff(t.due,a)>0;return '<tr><td>'+esc(t.title)+'</td><td>'+esc(CL[t.cat]||t.cat)+'</td><td>'+esc(t.owner)+'</td><td style="white-space:nowrap">'+(t.due?short(t.due):"")+'</td><td style="white-space:nowrap" class="'+(od?"s-over":t.status==="完了"?"s-done":"")+'">'+(od?"期限切れ":esc(t.status))+'</td></tr>'}).join("")+'</tbody></table>';
   h+='<div class="s-sec"><div class="s-h2">ガントチャート</div>'+ganttHTML(e,rows)+'</div>';
-  h+='<div class="s-sec"><div class="s-h2">必須ライン（'+must.filter(k=>k.done).length+' / '+must.length+'）</div><table class="s-t"><tbody>'+must.map(k=>'<tr><td style="width:1.6em;text-align:center">'+(k.done?"☑":"□")+'</td><td>'+esc(k.text)+(k.note?'<br><span style="color:#555">'+esc(k.note)+'</span>':"")+'</td></tr>').join("")+'</tbody></table></div>';
   h+='<div class="s-foot">行事管理APP v2　印刷日 '+fmt(todayISO())+'　※個別配慮の情報は印刷に含みません。</div>';
   return h;
 }
@@ -669,7 +665,7 @@ function derived(){
     jd.innerHTML='<b>判定</b><span class="chip '+m[0]+'" style="align-self:flex-start;font-size:15px">'+m[1]+'</span><div class="num">出勤予定 '+j.att+'人 − 2人 = '+(j.att-2)+'人<br>必要な配置 '+j.need+'人<br>'+(j.left>=0?"余り "+j.left+"人":"不足 "+(-j.left)+"人")+'</div>'}
   const ot=$c("ototals");if(ot){const t=orderTotal(e);ot.innerHTML='<span class="num">合計 <b>'+yen(t)+'</b>　'+(e.budget>0?(t>e.budget?'<span class="chip crit">予算を超過</span>':'<span class="chip good">予算内（残り '+yen(e.budget-t)+'）</span>'):"")+'</span>'}
   const ott=$c("ottotals");if(ott){const t=otTotal(e);ott.innerHTML='<span class="num">合計 <b>'+t+'時間</b>　'+(e.rate>0?'概算 <b>'+yen(t*e.rate)+'</b>':'<span class="chip">単価は保留</span>')+'</span>'}
-  const gc=$c("gcount");if(gc){const n=e.kids.filter(k=>String(k.growth).trim()).length;gc.innerHTML='<span class="chip '+(n===e.kids.length?"good":"warn")+'">'+n+' / '+e.kids.length+' クラス記入済み</span>　（必須ライン1）'}
+  const gc=$c("gcount");if(gc){const n=e.kids.filter(k=>String(k.growth).trim()).length;gc.innerHTML='<span class="chip '+(n===e.kids.length?"good":"warn")+'">'+n+' / '+e.kids.length+' クラス記入済み</span>'}
   const rb=$c("rbtn");if(rb){const r=S.ui.draft.retro;rb.disabled=!(String(r.fact).trim()&&String(r.who).trim()&&r.weeks!==""&&String(r.what).trim()&&Number(r.weeks)>=0)}
   const ow=$c("onewarn");if(ow){const l=S.ui.draft.log.one;ow.innerHTML=l.length>40?'<span class="chip warn">長くなっています。「要するに？」を一文にしましょう（'+l.length+'字）</span>':""}
   const mk=$c("mk");if(mk)mk.disabled=!S.ui.draft.ev.date;
@@ -736,6 +732,8 @@ document.addEventListener("click",function(x){
   else if(a==="addOrder"){e.orders.push({name:"",to:"",due:"",amount:0,state:"未発注"})}
   else if(a==="addOT"){e.overtime.push({label:"",hours:0})}
   else if(a==="addNotice"){e.notices.push({what:"",when:"",drafter:"",one:"",ok:false})}
+  else if(a==="addCheck"){const tx=String(dr.chk[i]||"").trim();if(!tx){alert_("確認項目を入れてください");return}e.checks.push({id:uid(),cat:i,group:"every",text:tx,done:false,note:"",ref:"",custom:true});dr.chk[i]=""}
+  else if(a==="addPlace"){const n=String(dr.place||"").trim();if(!n){alert_("配置の名前を入れてください");return}e.places.push({name:n,need:0,custom:true});dr.place=""}
   else if(a==="addTask"){const t=dr.task;if(!String(t.title).trim()||!t.due){alert_("内容と期限を入れてください");return}e.tasks.push({id:uid(),cat:t.cat,title:t.title.trim(),owner:t.owner,start:t.start||t.due,due:t.due,status:"未着手"});dr.task={cat:"物",title:"",owner:"",start:"",due:""}}
   else if(a==="addLog"){const l=dr.log;if(!l.when||!String(l.one).trim()){alert_("いつ・言いたい一言を入れてください");return}e.logs.push({when:l.when,where:l.where,from:l.from,to:l.to,one:l.one.trim(),ref:l.ref,ok:false,photos:(l.photos||[]).slice()});if(!touch()){e.logs.pop();render(true);return}dr.log=blankLog();render(true);return}
   else if(a==="addRetro"){const r=dr.retro;e.retros.push({cat:r.cat,fact:r.fact.trim(),did:r.did.trim(),who:r.who.trim(),weeks:Number(r.weeks),what:r.what.trim()});dr.retro={cat:"人",fact:"",did:"",who:"",weeks:"",what:""}}
