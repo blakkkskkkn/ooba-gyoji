@@ -250,7 +250,7 @@ const CATS=["人","物","金","情報"];
 const CL={"人":"だれが","物":"段取り","金":"お金","情報":"伝えること"};
 const CATP=CATS.map(c=>[c,CL[c]]);
 const CLASSES=[["いちご組","0歳","--c1"],["りんご組","1歳","--c2"],["さくらんぼ組","2歳","--c3"],["みかん組","3歳","--c4"],["ぶどう組","4歳","--c5"],["すいか組","5歳","--c6"]];
-const OWNERS=["園長","主任","各クラス","係"];  /* 「誰が」の候補は役割だけ。職員の呼び名は Store.owners()（v2でシートの「設定」）から */
+const OWNERS=["園長","各クラス","係"];  /* 「誰が」の候補は役割だけ。職員の呼び名は Store.owners()（v2でシートの「設定」）から */
 let STAFF=[];
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const D=s=>{const a=s.split("-").map(Number);return new Date(a[0],a[1]-1,a[2])};
@@ -315,7 +315,7 @@ const REF={
   after:["kangae","k_after","行事の考え方 振り返り"]
 };
 
-/* ===== 確認項目のひな形（必須ライン9＋毎回の確認11＋構想メモ・AI提案） ===== */
+/* ===== 確認項目のひな形（必須ライン9＋毎回の確認11＋追加の確認項目） ===== */
 function templateChecks(){
   let n=0;
   const c=(cat,group,text,ref,ai)=>({id:"c"+(++n),cat,group,text,done:false,note:"",ref:ref||"",ai:!!ai});
@@ -440,13 +440,13 @@ const photoBtn=t=>'<label class="b2 bi">'+svg("camera",16)+'写真を足す<inpu
 const thumbs=(arr,i)=>(arr||[]).map((p,j)=>'<div class="ph"><button class="t" data-act="zoom" data-i="'+i+'" data-j="'+j+'" aria-label="写真を大きく見る"><img '+phAttr(p)+' alt="伝達の写真"></button><button class="rm" data-act="rmPhoto" data-i="'+i+'" data-j="'+j+'" aria-label="この写真を消す">'+svg("x",12)+'</button></div>').join("");
 
 function checksBlock(e,cat){
-  const gl={must:"秋の行事の必須ライン",every:"毎回の確認（行事のチェックリスト）",more:"構想メモ・AI提案の追加項目"};
+  const gl={must:"秋の行事の必須ライン",every:"毎回の確認（行事のチェックリスト）",more:"追加の確認項目"};
   let h="";
   ["must","every","more"].forEach(g=>{
     const items=e.checks.map((k,i)=>({k,i})).filter(x=>x.k.cat===cat&&x.k.group===g);
     if(!items.length)return;
     h+='<div class="gtitle">'+gl[g]+'</div>';
-    items.forEach(x=>{h+='<div class="chk'+(x.k.done?" done":"")+'" id="chk_'+x.k.id+'"><input type="checkbox" data-p="checks.'+x.i+'.done"'+(x.k.done?" checked":"")+'><div class="t"><div class="tt">'+esc(x.k.text)+(x.k.ai?' <span class="chip acc">AI提案</span>':"")+" "+refLink(x.k.ref)+'</div><input type="text" data-p="checks.'+x.i+'.note" value="'+esc(x.k.note)+'" placeholder="メモ（いつ・誰に・どう決めたか）"></div></div>'});
+    items.forEach(x=>{h+='<div class="chk'+(x.k.done?" done":"")+'" id="chk_'+x.k.id+'"><input type="checkbox" data-p="checks.'+x.i+'.done"'+(x.k.done?" checked":"")+'><div class="t"><div class="tt">'+esc(x.k.text)+" "+refLink(x.k.ref)+'</div><input type="text" data-p="checks.'+x.i+'.note" value="'+esc(x.k.note)+'" placeholder="メモ（いつ・誰に・どう決めたか）"></div></div>'});
   });
   return h||'<p class="empty">この分類の確認項目はありません。</p>';
 }
@@ -527,7 +527,7 @@ function vPeople(){
   const e=ev(),j=judge(e);
   const names=e.team.map(t=>t.name).filter(Boolean);
   let h='<div class="sec"><h2>'+IC("people","--k-o")+'体制</h2><div class="tw card"><table><thead><tr><th>名前</th><th>役割</th><th></th></tr></thead><tbody>'+e.team.map((t,i)=>'<tr><td><input data-p="team.'+i+'.name" value="'+esc(t.name)+'"></td><td><input data-p="team.'+i+'.role" value="'+esc(t.role)+'"></td><td><button class="x" data-act="del" data-k="team" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+'</tbody></table><div style="margin-top:8px"><button class="b2" data-act="addTeam">行を追加</button></div></div>'+
-    '<div class="grid"><div class="card stack">'+field("主で動く人","<select data-p=\"lead\"><option value=\"\">未決定</option>"+names.map(n=>'<option'+(n===e.lead?" selected":"")+'>'+esc(n)+'</option>').join("")+"</select>")+'</div><div class="card stack">'+field("司令塔（全体を見て連絡を受ける人）","<select data-p=\"commander\"><option value=\"\">未決定</option>"+names.map(n=>'<option'+(n===e.commander?" selected":"")+'>'+esc(n)+'</option>').join("")+"</select>")+'<span class="chip acc" style="align-self:flex-start">AI提案</span></div>'+
+    '<div class="grid"><div class="card stack">'+field("主で動く人","<select data-p=\"lead\"><option value=\"\">未決定</option>"+names.map(n=>'<option'+(n===e.lead?" selected":"")+'>'+esc(n)+'</option>').join("")+"</select>")+'</div><div class="card stack">'+field("司令塔（全体を見て連絡を受ける人）","<select data-p=\"commander\"><option value=\"\">未決定</option>"+names.map(n=>'<option'+(n===e.commander?" selected":"")+'>'+esc(n)+'</option>').join("")+"</select>")+'</div>'+
     '<div class="card stack"><span class="small muted"><b>カメラマン</b>（えんフォトは4月に年間で手配済み）</span><label class="row"><input type="radio" name="ph" data-p="photographer" value="yes"'+(e.photographer==="yes"?" checked":"")+'> 来る</label><label class="row"><input type="radio" name="ph" data-p="photographer" value="no"'+(e.photographer==="no"?" checked":"")+'> 来ない</label><label class="row"><input type="radio" name="ph" data-p="photographer" value="unset"'+(e.photographer==="unset"?" checked":"")+'> 未確認</label></div></div></div>';
   h+='<div class="sec"><h2>'+IC("people","--k-o")+'参加クラス</h2><div class="card row">'+CLASSES.map(c=>'<label class="row"><input type="checkbox" data-act="cls" data-i="'+c[0]+'"'+(e.classes.indexOf(c[0])>=0?" checked":"")+'><span class="cls" style="background:var('+c[2]+')"></span>'+c[0]+'（'+c[1]+'）</label>').join("")+'</div></div>';
   h+='<div class="sec"><h2>'+IC("people","--k-o")+'人員：2人欠けても回るか</h2><div class="grid"><div class="card stack"><b>出勤予定の人数</b>'+Object.keys(e.staff).map(k=>'<label class="row">'+k+' <input type="number" min="0" data-p="staff.'+k+'"> 人</label>').join("").replace(/data-p="staff\.([^"]+)"/g,(m,k)=>m+' value="'+(+e.staff[k]||0)+'"')+'<span class="small muted">有期・パートの出勤の有無を入れてください。</span></div>'+
