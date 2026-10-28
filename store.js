@@ -64,7 +64,7 @@ function nextJob(){
   const evs=state.events||[];
   for(const e of evs){
     if(conflicted[e.id])continue;
-    for(const l of (e.logs||[]))for(let j=0;j<(l.photos||[]).length;j++){
+    for(const l of (e.logs||[]).concat(e.snaps||[]))for(let j=0;j<(l.photos||[]).length;j++){  /* 写真で残す（snaps）と、前に伝達ログへ入れた写真 */
       const p=l.photos[j];
       if(typeof p==="string"&&p.indexOf("data:")===0)return function(){return upPhoto(e,l,j,p)};
     }

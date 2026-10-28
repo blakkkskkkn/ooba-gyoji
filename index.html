@@ -165,6 +165,12 @@ h2 .ic,h3 .ic{margin-right:8px;width:30px;height:30px}
 .confirm{border:2px solid var(--crit);background:var(--crit-bg);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .photos{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .ph{position:relative}
+.place{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-top:1px solid var(--line)}
+.place:first-of-type{border-top:0;padding-top:0}
+.pwho{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pwho .chip{font-size:13px;padding:2px 4px 2px 10px}
+.pwho .chip .x{padding:0 4px;font-size:12px;color:inherit}
+.pwho select,.pwho input{height:32px;font-size:13px;max-width:12em}
 .ph>button.t{border:1px solid var(--line);border-radius:8px;padding:0;background:var(--surface);display:block;overflow:hidden}
 .ph img{display:block;width:64px;height:64px;object-fit:cover}
 .ph .rm{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:grid;place-items:center;padding:0}
@@ -377,15 +383,16 @@ function newEvent(name,date){
     staff:{"正規":0,"有期":0,"パート":0},
     places:["受付・案内","各クラスの進行","全体アナウンス","安全・けが対応","駐車場・周辺","保護者対応","司令塔"].map(n=>({name:n,need:0})),
     care:[],familyLimit:"",childcare:"",orders:[],budget:0,overtime:[],rate:0,
-    notices:[],phrase:"",logs:[],retros:[],prevTaskCount:""};
+    notices:[],phrase:"",logs:[],snaps:[],retros:[],prevTaskCount:""};
 }
 
 /* ===== 状態 ===== */
-const PHOTO_MAX=4;          /* 伝達ログ1件あたりの写真の枚数 */
+const PHOTO_MAX=4;          /* 写真の記録1件あたりの枚数 */
 const PHOTO_LIMIT=3500000;  /* ブラウザの保存容量の目安（文字数）。v2でGoogleドライブに移す */
-const blankLog=()=>({when:"",where:"個別",from:"",to:"",one:"",ref:"",photos:[]});
+const blankLog=()=>({when:"",where:"個別",from:"",to:"",one:"",ref:""});
+const blankSnap=()=>({when:"",what:"",photos:[]});
 let S={events:[],currentId:""};  /* 中身は起動時に Store.load() から入れる */
-S.ui={tab:"dash",asOf:todayISO(),fy:fyOf(todayISO()),confirmDel:"",confirmReset:false,zoom:null,doc:"must",filterOwner:"",whoOther:{},draft:{task:{cat:"物",title:"",owner:"",start:"",due:"",status:"未着手"},log:blankLog(),retro:{cat:"人",fact:"",did:"",who:"",weeks:"",what:""},ev:{name:"冬の行事",date:""},chk:{"人":"","物":"","金":"","情報":""},place:""}};
+S.ui={tab:"dash",asOf:todayISO(),fy:fyOf(todayISO()),confirmDel:"",confirmReset:false,zoom:null,doc:"must",filterOwner:"",whoOther:{},draft:{task:{cat:"物",title:"",owner:"",start:"",due:"",status:"未着手"},log:blankLog(),snap:blankSnap(),pwho:"",retro:{cat:"人",fact:"",did:"",who:"",weeks:"",what:""},ev:{name:"冬の行事",date:""},chk:{"人":"","物":"","金":"","情報":""},place:""}};
 const ev=()=>S.events.find(e=>e.id===S.currentId)||S.events[0];
 const persist=()=>{const r=Store.save({ver:2,events:S.events,currentId:S.currentId});if(r==="full"){toast("保存できませんでした。ブラウザの保存容量がいっぱいです。写真を減らしてください。",true);return false}return true};
 const touch=()=>{ev().updatedAt=todayISO();return persist()};
@@ -399,8 +406,12 @@ const isExpired=e=>isArchive(e)&&diff(keepUntil(evFY(e)),asOf())>0;
 const fyEvents=y=>S.events.filter(e=>evFY(e)===y).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9"));
 const fyList=()=>{const o=new Set(S.events.map(evFY));o.add(curFY());o.add(S.ui.fy);return Array.from(o).sort((a,b)=>b-a)};
 function setFY(y,quiet){S.ui.fy=y;const l=fyEvents(y);if(l.length&&!l.some(e=>e.id===S.currentId))S.currentId=l[0].id;if(!quiet)persist()}
-const photoChars=()=>S.events.reduce((a,e)=>a+(e.logs||[]).reduce((b,l)=>b+(l.photos||[]).reduce((c,p)=>c+p.length,0),0),0)+S.ui.draft.log.photos.reduce((c,p)=>c+p.length,0);
-const photoCount=e=>(e.logs||[]).reduce((b,l)=>b+(l.photos||[]).length,0);
+/* 写真は「写真で残す」（snaps）に入れる。前に伝達ログへ入れた写真（logs）も数える */
+const photoList=e=>(e.logs||[]).concat(e.snaps||[]).reduce((b,l)=>b.concat(l.photos||[]),[]);
+const photoChars=()=>S.events.reduce((a,e)=>a+photoList(e).reduce((c,p)=>c+p.length,0),0)+S.ui.draft.snap.photos.reduce((c,p)=>c+p.length,0);
+const photoCount=e=>photoList(e).length;
+/* 写真の置き場所：sd＝書きかけの写真の記録／s番号＝写真の記録／番号だけ＝伝達ログ（前に入れた写真） */
+const photoArr=(e,k)=>{k=String(k);if(k==="sd")return S.ui.draft.snap.photos;const l=k[0]==="s"?(e.snaps||[])[Number(k.slice(1))]:(e.logs||[])[Number(k)];if(!l)return null;if(!l.photos)l.photos=[];return l.photos};
 
 /* ===== 計算 ===== */
 function stat(e){const o={};CATS.forEach(c=>{const ts=e.tasks.filter(t=>t.cat===c),cs=e.checks.filter(k=>k.cat===c);const total=ts.length+cs.length;const done=ts.filter(t=>t.status==="完了").length+cs.filter(k=>k.done).length;o[c]={total,done,pct:total?Math.round(done/total*100):0}});return o}
@@ -456,7 +467,7 @@ const WP=(p,lab)=>WHO("data-p",p,val(p),lab);
 const bar=pct=>'<div class="bar"><i style="width:'+pct+'%"></i></div>';
 const chipS=s=>'<span class="chip '+(s==="完了"?"good":s==="進行中"?"acc":"")+'">'+svg(STI[s][0],12)+s+'</span>';
 const photoBtn=t=>'<label class="b2 bi">'+svg("camera",16)+'写真を足す<input class="vh" type="file" accept="image/*" multiple data-photo="'+t+'"></label>';
-const thumbs=(arr,i)=>(arr||[]).map((p,j)=>'<div class="ph"><button class="t" data-act="zoom" data-i="'+i+'" data-j="'+j+'" aria-label="写真を大きく見る"><img '+phAttr(p)+' alt="伝達の写真"></button><button class="rm" data-act="rmPhoto" data-i="'+i+'" data-j="'+j+'" aria-label="この写真を消す">'+svg("x",12)+'</button></div>').join("");
+const thumbs=(arr,i)=>(arr||[]).map((p,j)=>'<div class="ph"><button class="t" data-act="zoom" data-i="'+i+'" data-j="'+j+'" aria-label="写真を大きく見る"><img '+phAttr(p)+' alt="写真"></button><button class="rm" data-act="rmPhoto" data-i="'+i+'" data-j="'+j+'" aria-label="この写真を消す">'+svg("x",12)+'</button></div>').join("");
 
 function checksBlock(e,cat){
   const items=e.checks.map((k,i)=>({k,i})).filter(x=>x.k.cat===cat);
@@ -541,6 +552,14 @@ function vTasks(){
   return h;
 }
 
+/* 当日の配置の担当：名前の札を並べ、「＋担当」で足す（2人以上も可）。候補にない名前は「そのほか（書く）」 */
+function placeWho(p,i){
+  const w=p.who||[];
+  return '<div class="pwho"><span class="small muted">担当</span>'+w.map((n,j)=>'<span class="chip acc">'+esc(n)+'<button class="x" data-act="rmWho" data-i="'+i+'" data-j="'+j+'" aria-label="'+esc(n)+'を担当から外す">'+svg("x",12)+'</button></span>').join("")+
+    (S.ui.placeOther===i?'<input data-u="draft.pwho" data-pwho="'+i+'" value="'+esc(S.ui.draft.pwho)+'" placeholder="名前を書く" aria-label="'+esc(p.name)+'の担当（書く）"><button class="b2" data-act="addWhoTx" data-i="'+i+'">足す</button>':
+    '<select data-addwho="'+i+'" aria-label="'+esc(p.name)+'の担当を足す"><option value="">＋担当</option>'+NAMES.filter(n=>w.indexOf(n)<0).map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join("")+'<option value="'+OTHER+'">そのほか（書く）</option></select>')+'</div>';
+}
+
 function vPeople(){
   const e=ev(),j=judge(e);
   const names=Array.from(new Set(STAFF.concat(e.team.map(t=>t.name),[e.lead,e.commander]))).filter(Boolean);
@@ -549,7 +568,7 @@ function vPeople(){
     '<div class="card stack"><span class="small muted"><b>カメラマン</b>（えんフォトは4月に年間で手配済み）</span><label class="row"><input type="radio" name="ph" data-p="photographer" value="yes"'+(e.photographer==="yes"?" checked":"")+'> 来る</label><label class="row"><input type="radio" name="ph" data-p="photographer" value="no"'+(e.photographer==="no"?" checked":"")+'> 来ない</label><label class="row"><input type="radio" name="ph" data-p="photographer" value="unset"'+(e.photographer==="unset"?" checked":"")+'> 未確認</label></div></div></div>';
   h+='<div class="sec"><h2>'+IC("people","--k-o")+'参加クラス</h2><div class="card row">'+CLASSES.map(c=>'<label class="row"><input type="checkbox" data-act="cls" data-i="'+c[0]+'"'+(e.classes.indexOf(c[0])>=0?" checked":"")+'><span class="cls" style="background:var('+c[2]+')"></span>'+c[0]+'（'+c[1]+'）</label>').join("")+'</div></div>';
   h+='<div class="sec"><h2>'+IC("people","--k-o")+'人員：2人欠けても回るか</h2><div class="grid"><div class="card stack"><b>出勤予定の人数</b>'+Object.keys(e.staff).map(k=>'<label class="row">'+k+' <input type="number" min="0" data-p="staff.'+k+'"> 人</label>').join("").replace(/data-p="staff\.([^"]+)"/g,(m,k)=>m+' value="'+(+e.staff[k]||0)+'"')+'<span class="small muted">有期・パートの出勤の有無を入れてください。</span></div>'+
-    '<div class="card stack"><b>当日の配置（必要な人数）</b>'+e.places.map((p,i)=>'<label class="row"><span style="min-width:9em">'+esc(p.name)+'</span><input type="number" min="0" data-p="places.'+i+'.need" value="'+(+p.need||0)+'"> 人'+(p.custom?'<button class="x" data-act="del" data-k="places" data-i="'+i+'" aria-label="この配置を削除">'+svg("trash",16)+'</button>':"")+'</label>').join("")+'<div class="row" style="margin-top:4px">'+DR("place",{ph:"配置を追加（名前）"})+'<button class="b2" data-act="addPlace">追加する</button></div></div>'+
+    '<div class="card stack"><b>当日の配置（必要な人数・担当）</b>'+e.places.map((p,i)=>'<div class="place"><label class="row"><span style="min-width:9em">'+esc(p.name)+'</span><input type="number" min="0" data-p="places.'+i+'.need" value="'+(+p.need||0)+'"> 人'+(p.custom?'<button class="x" data-act="del" data-k="places" data-i="'+i+'" aria-label="この配置を削除">'+svg("trash",16)+'</button>':"")+'</label>'+placeWho(p,i)+'</div>').join("")+'<div class="row" style="margin-top:4px">'+DR("place",{ph:"配置を追加（名前）"})+'<button class="b2" data-act="addPlace">追加する</button></div></div>'+
     '<div class="card stack" id="judge"></div></div><div class="small">'+refLink("g4")+'</div></div>';
   h+='<div class="sec"><h2>'+IC("people","--k-o")+'そのほか</h2><div class="grid"><div class="card stack">'+field("1家庭あたりの参加人数（何名まで）",I("familyLimit",{ph:"例：2名まで"}))+'</div><div class="card stack">'+field("当日の保育を利用する人数（栄養士に伝える）",I("childcare",{ph:"例：5人（0歳1人・2歳2人・4歳2人）"}))+'</div></div></div>';
   h+='<div class="sec"><h2>'+IC("heart","--k-o")+'個別に配慮が必要な子ども</h2><p class="small muted" style="margin:0">書くのは「当日どうするか」だけです（診断名・家庭の事情・けがの経過は書きません）。この表は、ダッシュボードや資料には出ず、次の行事にもコピーされません。</p><div class="tw card"><table><thead><tr><th>クラス</th><th>イニシャル</th><th>当日の配慮（何をするか）</th><th>担当する職員</th><th></th></tr></thead><tbody>'+e.care.map((c,i)=>'<tr><td>'+SEL("care."+i+".cls",CLASSES.map(x=>x[0]))+'</td><td><input data-p="care.'+i+'.initial" value="'+esc(c.initial)+'"></td><td><input data-p="care.'+i+'.plan" value="'+esc(c.plan)+'"></td><td><input data-p="care.'+i+'.person" value="'+esc(c.person)+'"></td><td><button class="x" data-act="del" data-k="care" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+'</tbody></table><div style="margin-top:8px"><button class="b2" data-act="addCare">行を追加</button></div></div>';
@@ -593,8 +612,14 @@ function vLog(){
   const dr=S.ui.draft.retro;
   let h='<div class="sec"><h2>'+IC("log","--k-c")+'伝達ログ（何をいつどこで言ったか）</h2><div class="tw card"><table><thead><tr><th>いつ</th><th>どこで</th><th>誰が</th><th>誰に</th><th>言いたい一言</th><th>資料の場所</th><th>伝わった</th><th></th></tr></thead><tbody>'+
     e.logs.map((l,i)=>'<tr'+(l.ok?"":' style="background:var(--warn-bg)"')+'><td style="white-space:nowrap">'+esc(fmt(l.when))+'</td><td>'+esc(l.where)+'</td><td>'+esc(l.from)+'</td><td>'+esc(l.to)+'</td><td>'+esc(l.one)+((l.photos||[]).length?'<div class="photos" style="margin-top:6px">'+thumbs(l.photos,i)+'</div>':"")+'</td><td>'+esc(l.ref)+'</td><td style="text-align:center">'+CK("logs."+i+".ok")+'</td><td><button class="x" data-act="del" data-k="logs" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></td></tr>').join("")+
-    '</tbody></table>'+(e.logs.length?"":'<p class="empty">まだありません。</p>')+'<p class="small muted" style="margin:8px 0 0">黄色の行は「相手が自分の言葉で言い直せた」にチェックが入っていません。</p><p class="small muted" style="margin:6px 0 0" id="phuse"></p></div>'+
-    '<div class="card stack"><h3>伝達を記録する</h3><div class="row frow">'+field("いつ",DR("log.when",{t:"date"}))+field("どこで",DS("log.where",["幼児部会","乳児部会","昼会議","個別","紙で配布","LINE"]))+field("誰が",WD("log.from"))+field("誰に",WD("log.to"))+'</div><div class="row">'+field("言いたい一言（一文だけ）",DR("log.one"))+field("資料の場所",DR("log.ref",{ph:"リンクかファイル名"}))+'</div><div class="stack"><span class="small muted"><b>写真</b>（任意・'+PHOTO_MAX+'枚まで）撮っておきたい伝達の内容。掲示物、配置図、飾りなど。<b>子どもが写る写真は入れません。</b></span><div class="photos">'+thumbs(S.ui.draft.log.photos,"d")+(S.ui.draft.log.photos.length<PHOTO_MAX?photoBtn("draft"):"")+'</div></div><div class="small" id="onewarn"></div><div><button class="b" data-act="addLog">記録する</button></div></div></div>';
+    '</tbody></table>'+(e.logs.length?"":'<p class="empty">まだありません。</p>')+'<p class="small muted" style="margin:8px 0 0">黄色の行は「相手が自分の言葉で言い直せた」にチェックが入っていません。</p></div>'+
+    '<div class="card stack"><h3>伝達を記録する</h3><div class="row frow">'+field("いつ",DR("log.when",{t:"date"}))+field("どこで",DS("log.where",["幼児部会","乳児部会","昼会議","個別","紙で配布","LINE"]))+field("誰が",WD("log.from"))+field("誰に",WD("log.to"))+'</div><div class="row">'+field("言いたい一言（一文だけ）",DR("log.one"))+field("資料の場所",DR("log.ref",{ph:"リンクかファイル名"}))+'</div><div class="small" id="onewarn"></div><div><button class="b" data-act="addLog">記録する</button></div></div></div>';
+  /* 写真で残す：飾り・配置・掲示物など「物」の見本。伝達ログ（言ったこと・伝わったか）とは分ける */
+  const ds=S.ui.draft.snap,sn=e.snaps||[];
+  h+='<div class="sec"><h2>'+IC("camera","--k-c")+'写真で残す（飾り・配置・掲示物など）</h2><p class="small muted" style="margin:0">次の行事で見本にしたい「物」を写真で残します。<b>子どもが写る写真は入れません。</b></p>'+
+    (sn.length?'<div class="grid">'+sn.map((x,i)=>'<div class="card stack"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;align-items:flex-start"><span><b class="num">'+esc(fmt(x.when))+'</b>　'+esc(x.what)+'</span><button class="x" data-act="del" data-k="snaps" data-i="'+i+'" aria-label="この写真の記録を削除">'+svg("trash",16)+'</button></div><div class="photos">'+thumbs(x.photos,"s"+i)+((x.photos||[]).length<PHOTO_MAX?photoBtn("s"+i):"")+'</div></div>').join("")+'</div>':'<p class="empty">まだありません。</p>')+
+    '<p class="small muted" style="margin:0" id="phuse"></p>'+
+    '<div class="card stack"><h3>写真を記録する</h3><div class="row frow">'+field("いつ",DR("snap.when",{t:"date"}))+'<label class="field" style="flex:1 1 300px"><span>何の写真か（一言）</span>'+DR("snap.what",{ph:"例：玄関の飾り／園庭の配置図"})+'</label></div><div class="stack"><span class="small muted">写真（'+PHOTO_MAX+'枚まで）</span><div class="photos">'+thumbs(ds.photos,"sd")+(ds.photos.length<PHOTO_MAX?photoBtn("sd"):"")+'</div></div><div><button class="b" data-act="addSnap">記録する</button></div></div></div>';
   h+='<div class="sec"><h2>'+IC("log","--k-c")+'振り返り</h2><div class="card small">数字（自動）：期限切れのタスク <b class="num">'+late+'</b> 件／残業 <b class="num">'+otTotal(e)+'</b> 時間／発注 <b class="num">'+yen(orderTotal(e))+'</b></div>'+
     '<ul class="plain">'+e.retros.map((r,i)=>'<li class="card stack"><div class="row" style="justify-content:space-between"><span><span class="chip acc">'+esc(CL[r.cat]||r.cat)+'</span>'+""+'</span><button class="x" data-act="del" data-k="retros" data-i="'+i+'" aria-label="削除">'+svg("trash",16)+'</button></div><div><b>起きたこと：</b>'+esc(r.fact)+'</div><div><b>自分たちにできたこと：</b>'+esc(r.did)+'</div><div><b>次はこうする：</b>'+esc(r.who)+'が、本番の'+esc(r.weeks)+'週間前までに、'+esc(r.what)+'</div></li>').join("")+'</ul>'+
     '<div class="card stack"><h3>振り返りを書く</h3><div class="small muted">感想ではなく事実（時刻・人数・回数）で書きます。「次はこうする」は3つそろうと保存できます。</div><div class="row">'+field("分類",DS("retro.cat",CATP))+'</div>'+field("起きたこと（事実）",'<textarea data-u="draft.retro.fact" rows="2" placeholder="例：当日9:30〜9:50に遅刻の電話が3件、別々の職員に入った">'+esc(dr.fact)+'</textarea>')+field("自分たちにできたこと","<textarea data-u=\"draft.retro.did\" rows=\"2\" placeholder=\"「天気のせい」で終わらせずに書く\">"+esc(dr.did)+"</textarea>")+
@@ -663,7 +688,7 @@ function render(keepScroll){
   const y=window.scrollY;
   $c("view").innerHTML=(S.ui.tab!=="list"&&S.ui.tab!=="docs"&&!fe.length)?'<div class="sec"><h2>'+IC("list")+'この年度の行事はありません</h2><p>'+S.ui.fy+'年度（'+S.ui.fy+'年4月〜'+(S.ui.fy+1)+'年3月）の行事はまだ作られていません。</p><div><button class="b" data-act="go" data-i="list">行事一覧へ</button></div></div>':VIEWS[S.ui.tab]();
   const z=S.ui.zoom,zb=$c("zoom");
-  if(z&&e){const ph=z.i==="d"?S.ui.draft.log.photos:((e.logs[Number(z.i)]||{}).photos||[]);const src=ph[z.j];if(src){zb.className="on";zb.innerHTML='<div><img '+phAttr(src)+' alt="伝達の写真（拡大）"><div class="zt">タップで閉じる</div></div>'}else{S.ui.zoom=null;zb.className="";zb.innerHTML=""}}else{zb.className="";zb.innerHTML=""}
+  if(z&&e){const ph=photoArr(e,z.i)||[];const src=ph[z.j];if(src){zb.className="on";zb.innerHTML='<div><img '+phAttr(src)+' alt="写真（拡大）"><div class="zt">タップで閉じる</div></div>'}else{S.ui.zoom=null;zb.className="";zb.innerHTML=""}}else{zb.className="";zb.innerHTML=""}
   derived();buildSheet();
   fitAll();
   if(keepScroll)window.scrollTo(0,y);
@@ -706,11 +731,15 @@ document.addEventListener("change",function(x){
     if(o)S.ui.whoOther[wk]=1;else delete S.ui.whoOther[wk];
     if(at==="data-p"){setP(ev(),pa,v);touch()}else setP(S.ui,pa,v);
     render(true);if(o){const w=document.querySelector('[data-whoin="'+wk+'"]');if(w)w.focus()}return}
+  const aw=t.getAttribute("data-addwho");
+  if(aw!==null){const k=Number(aw),pl=ev().places[k];if(!pl)return;
+    if(t.value===OTHER){S.ui.placeOther=k;S.ui.draft.pwho="";render(true);const w=document.querySelector('[data-pwho="'+k+'"]');if(w)w.focus();return}
+    if(t.value){if(!pl.who)pl.who=[];if(pl.who.indexOf(t.value)<0)pl.who.push(t.value);touch()}render(true);return}
   const p=t.getAttribute("data-p"),u=t.getAttribute("data-u"),act=t.getAttribute("data-act");
   if(act==="cls"){const e=ev(),c=t.getAttribute("data-i");const i=e.classes.indexOf(c);if(t.checked&&i<0)e.classes.push(c);if(!t.checked&&i>=0)e.classes.splice(i,1);touch();render(true);return}
   if(u){
     if(u.indexOf("draft.")===0){setP(S.ui,u,t.value);derived();return}
-    if(u==="currentId"){if(t.value){S.currentId=t.value;S.ui.whoOther={};persist()}render();return}
+    if(u==="currentId"){if(t.value){S.currentId=t.value;S.ui.whoOther={};S.ui.placeOther=null;persist()}render();return}
     if(u==="fy"){S.ui.confirmDel="";setFY(Number(t.value));render();window.scrollTo(0,0);return}
     S.ui[u]=t.value;if(u==="asOf"){if(!t.value)S.ui.asOf=todayISO();setFY(curFY())}render(true);return;
   }
@@ -743,13 +772,16 @@ document.addEventListener("click",function(x){
     persist();render(true);toast("「"+nm+"」を削除しました");return}
   if(a==="askReset"){S.ui.confirmReset=true;render(true);return}
   if(a==="noReset"){S.ui.confirmReset=false;render(true);return}
-  if(a==="doReset"){if(Store.mode!=="local")return;Store.clear();S.events=[];S.currentId="";S.ui.tab="list";S.ui.asOf=todayISO();S.ui.confirmReset=false;S.ui.confirmDel="";S.ui.draft.log=blankLog();setFY(curFY(),true);render();return}
+  if(a==="doReset"){if(Store.mode!=="local")return;Store.clear();S.events=[];S.currentId="";S.ui.tab="list";S.ui.asOf=todayISO();S.ui.confirmReset=false;S.ui.confirmDel="";S.ui.draft.log=blankLog();S.ui.draft.snap=blankSnap();setFY(curFY(),true);render();return}
   if(a==="zoom"){S.ui.zoom={i:i,j:Number(b.getAttribute("data-j"))};render(true);return}
   if(a==="closeZoom"){S.ui.zoom=null;render(true);return}
-  if(a==="rmPhoto"){const j=Number(b.getAttribute("data-j"));if(i==="d")dr.log.photos.splice(j,1);else{const l=e.logs[Number(i)];if(l&&l.photos)l.photos.splice(j,1);touch()}render(true);return}
+  if(a==="rmPhoto"){const j=Number(b.getAttribute("data-j")),ar=photoArr(e,i);if(ar){ar.splice(j,1);if(i!=="sd")touch()}render(true);return}
+  if(a==="rmWho"){const pl=e.places[Number(i)];if(pl&&pl.who){pl.who.splice(Number(b.getAttribute("data-j")),1);touch()}render(true);return}
+  if(a==="addWhoTx"){const pl=e.places[Number(i)],ns=String(dr.pwho||"").split(/[、,，\s]+/).map(n=>n.trim()).filter(Boolean);S.ui.placeOther=null;dr.pwho="";
+    if(pl&&ns.length){if(!pl.who)pl.who=[];ns.forEach(n=>{if(pl.who.indexOf(n)<0)pl.who.push(n)});touch()}render(true);return}
   if(a==="print"){doPrint();return}
   if(a==="doc"){S.ui.tab="docs";S.ui.doc=b.getAttribute("data-d");render();const id=b.getAttribute("data-i");const el=id&&id!=="top"?document.getElementById(id):null;if(el){el.scrollIntoView({behavior:"auto",block:"start"});el.classList.add("hl")}else window.scrollTo(0,0);return}
-  if(a==="del"){const k=b.getAttribute("data-k");e[k].splice(Number(i),1);S.ui.whoOther={};touch();render(true);return}
+  if(a==="del"){const k=b.getAttribute("data-k");e[k].splice(Number(i),1);S.ui.whoOther={};S.ui.placeOther=null;touch();render(true);return}
   if(a==="addTeam"){e.team.push({name:"",role:""})}
   else if(a==="addCare"){e.care.push({cls:CLASSES[0][0],initial:"",plan:"",person:""})}
   else if(a==="addOrder"){e.orders.push({name:"",to:"",due:"",amount:0,state:"未発注"})}
@@ -758,7 +790,8 @@ document.addEventListener("click",function(x){
   else if(a==="addCheck"){const tx=String(dr.chk[i]||"").trim();if(!tx){alert_("確認項目を入れてください");return}e.checks.push({id:uid(),cat:i,group:"every",text:tx,done:false,note:"",ref:"",custom:true});dr.chk[i]=""}
   else if(a==="addPlace"){const n=String(dr.place||"").trim();if(!n){alert_("配置の名前を入れてください");return}e.places.push({name:n,need:0,custom:true});dr.place=""}
   else if(a==="addTask"){const t=dr.task;if(!String(t.title).trim()||!t.due){alert_("内容と期限を入れてください");return}e.tasks.push({id:uid(),cat:t.cat,title:t.title.trim(),owner:t.owner,start:t.start||t.due,due:t.due,status:t.status||"未着手"});dr.task={cat:"物",title:"",owner:"",start:"",due:"",status:"未着手"};S.ui.whoOther={}}
-  else if(a==="addLog"){const l=dr.log;if(!l.when||!String(l.one).trim()){alert_("いつ・言いたい一言を入れてください");return}e.logs.push({when:l.when,where:l.where,from:l.from,to:l.to,one:l.one.trim(),ref:l.ref,ok:false,photos:(l.photos||[]).slice()});if(!touch()){e.logs.pop();render(true);return}dr.log=blankLog();render(true);return}
+  else if(a==="addLog"){const l=dr.log;if(!l.when||!String(l.one).trim()){alert_("いつ・言いたい一言を入れてください");return}e.logs.push({when:l.when,where:l.where,from:l.from,to:l.to,one:l.one.trim(),ref:l.ref,ok:false});if(!touch()){e.logs.pop();render(true);return}dr.log=blankLog();render(true);return}
+  else if(a==="addSnap"){const x=dr.snap;if(!x.photos.length||!String(x.what).trim()){alert_("写真と「何の写真か」を入れてください");return}if(!e.snaps)e.snaps=[];e.snaps.push({when:x.when||todayISO(),what:x.what.trim(),photos:x.photos.slice()});if(!touch()){e.snaps.pop();render(true);return}dr.snap=blankSnap();render(true);return}
   else if(a==="addRetro"){const r=dr.retro;e.retros.push({cat:r.cat,fact:r.fact.trim(),did:r.did.trim(),who:r.who.trim(),weeks:Number(r.weeks),what:r.what.trim()});dr.retro={cat:"人",fact:"",did:"",who:"",weeks:"",what:""};S.ui.whoOther={}}
   else if(a==="mk"){
     const src=(e&&(e.retros||[]).length?e:null)||S.events.find(z=>(z.retros||[]).length);
@@ -778,7 +811,7 @@ function addPhotos(inp){
   const tgt=inp.getAttribute("data-photo"),files=Array.from(inp.files||[]);inp.value="";
   if(!files.length)return;
   const e=ev();
-  const arrOf=function(){if(tgt==="draft")return S.ui.draft.log.photos;const l=e.logs[Number(tgt.slice(4))];if(!l)return null;if(!l.photos)l.photos=[];return l.photos};
+  const arrOf=function(){return photoArr(e,tgt)};
   let chain=Promise.resolve();
   files.forEach(function(f){chain=chain.then(function(){return shrink(f)}).then(function(url){
     const arr=arrOf();if(!arr)return;
@@ -786,9 +819,10 @@ function addPhotos(inp){
     if(!url){alert_("写真を読み込めませんでした");return}
     if(Store.mode==="local"&&photoChars()+url.length>PHOTO_LIMIT){alert_("保存できる容量がいっぱいです。使っていない写真を消してください");return}
     arr.push(url);
-    if(tgt!=="draft"&&!touch())arr.pop()})});
+    if(tgt!=="sd"&&!touch())arr.pop()})});
   chain.then(function(){render(true)})}
 document.addEventListener("keydown",function(k){if(k.key==="Escape"&&S.ui.zoom){S.ui.zoom=null;render(true)}});
+document.addEventListener("keydown",function(k){const t=k.target;if(k.key==="Enter"&&!k.isComposing&&k.keyCode!==229&&t.getAttribute&&t.getAttribute("data-pwho")!==null){k.preventDefault();const b=document.querySelector('[data-act="addWhoTx"][data-i="'+t.getAttribute("data-pwho")+'"]');if(b)b.click()}});
 /* 内容欄のEnterは改行せず確定（日本語の変換中のEnterはそのまま） */
 document.addEventListener("keydown",function(k){if(k.key==="Enter"&&!k.isComposing&&k.keyCode!==229&&k.target.classList&&k.target.classList.contains("ttl")){k.preventDefault();k.target.blur()}});
 function toast(msg,bad){const el=document.createElement("div");el.className="toast";el.style.cssText="border-radius:8px;padding:10px 14px;font-size:13px;border:1px solid "+(bad?"var(--crit)":"var(--accent-text)")+";background:"+(bad?"var(--crit-bg)":"var(--accent-bg)")+";color:"+(bad?"var(--crit)":"var(--accent-text)");el.textContent=msg;document.body.appendChild(el);setTimeout(function(){el.remove()},5000)}
