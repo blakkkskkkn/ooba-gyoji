@@ -182,6 +182,37 @@ label.b2.bi{cursor:pointer}
 #zoom img{max-width:100%;max-height:82vh;border-radius:8px;background:#fff;display:block;margin:0 auto}
 #zoom .zt{color:#fff;margin-top:10px;text-align:center;font-size:13px}
 
+/* 当日の動き：職員×時間帯の表。持ち場の種類で色を分ける */
+.dg{border-collapse:collapse;width:100%;font-size:13px;table-layout:fixed}
+.tw>table.dg{min-width:640px}
+.dg th,.dg td{border:1px solid var(--line);padding:5px 6px;text-align:center;vertical-align:middle;line-height:1.4;white-space:normal}
+.dg thead th{background:var(--accent-bg);color:var(--ink);font-size:12px}
+.dg thead th small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.dg th.nm{position:sticky;left:0;z-index:1;background:var(--surface);color:var(--ink);font-size:13px;text-align:left}
+.dg thead th.nm{background:var(--accent-bg)}
+.dg td .arr{color:var(--muted);margin-left:6px}
+.dg td .tm{display:block;font-size:11px;color:var(--muted);font-weight:700}
+.dk-cls{background:color-mix(in srgb,var(--k-b) 18%,var(--surface))}
+.dk-uk{background:color-mix(in srgb,var(--c5) 18%,var(--surface))}
+.dk-mi{background:color-mix(in srgb,var(--k-o) 22%,var(--surface))}
+.dk-ho{background:color-mix(in srgb,var(--k-p) 18%,var(--surface))}
+.dk-ba{background:color-mix(in srgb,var(--k-c) 16%,var(--surface))}
+.dk-ni{background:color-mix(in srgb,var(--k-g) 18%,var(--surface))}
+.dk-fr{background:color-mix(in srgb,var(--muted) 14%,var(--surface))}
+.doff{background:repeating-linear-gradient(135deg,var(--surface) 0 7px,var(--line) 7px 8px)}
+.dg tr.dchk td,.dg tr.dchk th{background:var(--surface);font-size:12px;text-align:left}
+.dchk .ok{background:none;color:var(--good)} .dchk .ng{color:var(--crit);font-weight:700}
+.dlg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}
+.dlg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px;border:1px solid var(--line)}
+.dg.ed td{padding:3px}
+.dg.ed td input{width:100%;min-width:0;font-size:13px;padding:4px 6px;background:transparent;border:1px dashed var(--line)}
+.dg.ed td input:disabled{border:0}
+.dg.ed th.nm input{width:100%;font-size:13px;padding:3px 6px}
+.dg.ed th.nm .tms{display:grid;grid-template-columns:auto 1fr;gap:2px 4px;align-items:center;margin-top:3px;font-size:11px;font-weight:400;color:var(--muted)}
+.dg.ed th.nm .tms input{font-size:12px;padding:1px 4px}
+.dg.ed th.nm .rb{display:flex;gap:0;margin-top:2px}
+.dg.ed th.nm .rb .x{font-size:13px;padding:0 6px}
+.dneed td input[type=number]{width:64px;min-width:0}
 #sheet{display:none}
 .toast{position:fixed;left:16px;right:16px;bottom:16px;z-index:9}
 @media print{
@@ -221,6 +252,12 @@ label.b2.bi{cursor:pointer}
   #sheet .glabel{font-size:8pt;display:block;white-space:nowrap;text-overflow:ellipsis;padding:0 6px 0 0;margin:0}
   #sheet .ghead{font-size:8pt}
   #sheet p.small{font-size:8pt}
+  #sheet .dg{font-size:9pt;table-layout:fixed;min-width:0!important}
+  #sheet .dg th,#sheet .dg td{border:1px solid #9aa9a5;padding:3px 4px;color:#111}
+  #sheet .dg th.nm{position:static;font-size:9.5pt}
+  #sheet .dg thead th small{color:#444;font-size:8pt}
+  #sheet .dg tr{break-inside:avoid}
+  #sheet .dlg{font-size:8.5pt;color:#333;margin:4px 0 6px}
 }
 @media (max-width:560px){.hero .days{font-size:36px} .grow{grid-template-columns:170px 1fr}}
 /* スマホ幅：タスク表を1件ずつのカードにする（内容を一番上に全幅で） */
@@ -434,6 +471,7 @@ function alerts(e){
   if(j.state==="short")a.push({lv:"crit",text:"2人欠けると人員が足りません（あと"+(-j.left)+"人）",go:"people"});
   if(j.state==="tight")a.push({lv:"warn",text:"2人欠けると、配置の余りがありません",go:"people"});
   if(!e.commander)a.push({lv:"warn",text:"司令塔（全体を見て連絡を受ける人）が決まっていません",go:"people"});
+  dayShort(e).forEach(x=>a.push({lv:"warn",text:"当日の動き：「"+x.slot+"」の"+x.name+"が足りません（"+x.have+"/"+x.need+"人）",go:"day"}));
   if(e.photographer==="unset")a.push({lv:"warn",text:"カメラマンが来るかどうかが未確認です",go:"people"});
   if(e.budget>0&&orderTotal(e)>e.budget)a.push({lv:"crit",text:"発注の合計が予算を超えています",go:"money"});
   const st=diff(e.updatedAt,asOf());
@@ -480,7 +518,7 @@ function checksBlock(e,cat){
 }
 
 /* ===== 画面 ===== */
-const TABS=[["list","行事一覧","list","--k-c"],["dash","ダッシュボード","dash","--k-c"],["tasks","タスクとガント","tasks","--k-c"],["people","だれが","people","--k-o"],["things","段取り","things","--k-g"],["money","お金","money","--k-b"],["info","伝えること","info","--k-p"],["log","伝達・振り返り","log","--k-c"],["docs","資料","docs","--k-c"]];
+const TABS=[["list","行事一覧","list","--k-c"],["dash","ダッシュボード","dash","--k-c"],["tasks","タスクとガント","tasks","--k-c"],["people","だれが","people","--k-o"],["day","当日の動き","clock","--k-o"],["things","段取り","things","--k-g"],["money","お金","money","--k-b"],["info","伝えること","info","--k-p"],["log","伝達・振り返り","log","--k-c"],["docs","資料","docs","--k-c"]];
 
 function vList(){
   const cur=ev(),y=S.ui.fy,list=fyEvents(y),arch=y<curFY();
@@ -576,6 +614,135 @@ function vPeople(){
   return h;
 }
 
+/* ===== 当日の動き（だれが・いつ・どこで）：職員×時間帯の表 =====
+   マスには持ち場の名前を書く（例：門前見張り、園庭）。書いてある持ち場の名前で色を決め、抜けチェックで数える。
+   「→」だけのマスは左と同じ。出勤・退勤の時刻を入れると、まったく重ならない時間帯は勤務外（斜線）になる */
+const DAYK={cls:"クラス",uk:"受付・係",mi:"見張り",ho:"保育",ba:"園庭・ホール",ni:"日誌",fr:"フリー"};
+const DAYPOSTS=[["クラス","cls"],["受付","uk"],["係","uk"],["門前","mi"],["駐車場","mi"],["保育","ho"],["園庭","ba"],["ホール","ba"],["日誌","ni"],["フリー","fr"]];
+const CONT="→";
+function dayInit(e){
+  if(!e.day)e.day={slots:[],posts:DAYPOSTS.map(p=>({name:p[0],kind:p[1],need:{}})),rows:[]};
+  const d=e.day;d.slots=d.slots||[];d.posts=d.posts||[];d.rows=d.rows||[];
+  d.posts.forEach(p=>{if(!p.need)p.need={}});d.rows.forEach(r=>{if(!r.cells)r.cells={}});d.slots.forEach(s=>{if(!s.cls)s.cls=[]});
+  const dr=S.ui.draft;if(!dr.slot)dr.slot={name:"",from:"",to:""};if(dr.drow==null)dr.drow="";if(!dr.dpost)dr.dpost={name:"",kind:"ba"};
+  return d;
+}
+const tmin=t=>{const m=/^(\d{1,2}):(\d{2})/.exec(String(t||""));return m?Number(m[1])*60+Number(m[2]):null};
+const tlab=t=>{const m=tmin(t);return m==null?"":Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
+const cshort=c=>String(c).replace(/組$/,"");
+/* 時間帯の始まり・終わり（書いていなければ、前の終わり／次の始まりを使う） */
+function dayBounds(d){return d.slots.map((s,k)=>{
+  let f=tmin(s.from),t=tmin(s.to);
+  if(f==null&&k>0){const p=d.slots[k-1];f=tmin(p.to);if(f==null)f=tmin(p.from)}
+  if(t==null&&k<d.slots.length-1){const n=d.slots[k+1];t=tmin(n.from);if(t==null)t=tmin(n.to)}
+  return {f:f==null?-Infinity:f,t:t==null?Infinity:t}})}
+/* 職員1人の、時間帯ごとの勤務（on）と「〇:〇〇出勤／退勤」の表示 */
+function dayDuty(r,b){
+  const i=tmin(r.in),o=tmin(r.out),I0=i==null?-Infinity:i,O0=o==null?Infinity:o;
+  const on=b.map(x=>{if(i==null&&o==null)return true;const ov=Math.min(x.t,O0)-Math.max(x.f,I0);return ov>0});
+  const lab=b.map(()=>"");const f=on.indexOf(true),l=on.lastIndexOf(true);
+  if(f>=0&&i!=null&&i>b[f].f)lab[f]=tlab(r.in)+"出勤";
+  if(l>=0&&o!=null&&o<b[l].t)lab[l]=(lab[l]?lab[l]+"・":"")+tlab(r.out)+"退勤";
+  return {on,lab};
+}
+/* マスの中身（「→」なら左をさかのぼる） */
+function dayEff(d,r,k){for(let j=k;j>=0;j--){const t=String(r.cells[d.slots[j].id]||"").trim();if(t!==CONT)return t}return ""}
+/* 書いてある持ち場のうち、一番前にあるものの種類で色を決める */
+function dayKind(d,t){let best=null,bi=1e9,bl=0;d.posts.forEach(p=>{const n=String(p.name||"").trim();if(!n)return;const x=t.indexOf(n);if(x>=0&&(x<bi||(x===bi&&n.length>bl))){best=p;bi=x;bl=n.length}});return best?best.kind:""}
+/* 抜けチェック：時間帯ごとに、必要な人数を入れた持ち場だけ数える */
+function dayCheck(e){
+  const d=e.day;if(!d||!d.slots.length)return [];const b=dayBounds(d);const du=d.rows.map(r=>dayDuty(r,b));
+  return d.slots.map((s,k)=>({s,k,items:d.posts.filter(p=>String(p.name||"").trim()&&(+p.need[s.id]||0)>0).map(p=>{const n=p.name.trim();const who=d.rows.filter((r,ri)=>du[ri].on[k]&&dayEff(d,r,k).indexOf(n)>=0).map(r=>r.name||"（名前なし）");return {name:n,need:+p.need[s.id],have:who.length,who}})}));
+}
+const dayShort=e=>dayCheck(e).reduce((a,x)=>a.concat(x.items.filter(i=>i.have<i.need).map(i=>({slot:x.s.name||"（名前なし）",name:i.name,have:i.have,need:i.need}))),[]);
+const slotHead=s=>esc(s.name||"（名前なし）")+'<small>'+((s.from||s.to)?esc(tlab(s.from))+"〜"+esc(tlab(s.to)):"")+(s.cls&&s.cls.length?(s.from||s.to?"<br>":"")+esc(s.cls.map(cshort).join("・")):"")+'</small>';
+const dayLegend=()=>'<div class="dlg">'+Object.keys(DAYK).map(k=>'<span><i class="dk-'+k+'"></i>'+DAYK[k]+'</span>').join("")+'<span><i class="doff"></i>勤務外</span></div>';
+function dayChkRow(e,cols){
+  const ck=dayCheck(e);if(!ck.some(x=>x.items.length))return "";
+  return '<tr class="dchk"><th class="nm">抜けチェック</th>'+ck.map(x=>'<td>'+(x.items.length?x.items.map(i=>'<div class="'+(i.have<i.need?"ng":"ok")+'">'+esc(i.name)+' '+i.have+'/'+i.need+(i.have<i.need?"　足りない":"")+'</div>').join(""):'<span class="muted">—</span>')+'</td>').join("")+(cols||"")+'</tr>';
+}
+/* 見る用・印刷用の表（「→」は左とつなげる） */
+function dayGridHTML(e){
+  const d=e.day,b=dayBounds(d);
+  let h='<table class="dg" style="min-width:'+(6.5+d.slots.length*8)+'em"><colgroup><col style="width:6.5em">'+d.slots.map(()=>'<col>').join("")+'</colgroup><thead><tr><th class="nm"></th>'+d.slots.map(s=>'<th>'+slotHead(s)+'</th>').join("")+'</tr></thead><tbody>';
+  d.rows.forEach(r=>{
+    const du=dayDuty(r,b);h+='<tr><th class="nm">'+esc(r.name||"（名前なし）")+'</th>';
+    let k=0;
+    while(k<d.slots.length){
+      if(!du.on[k]){h+='<td class="doff"></td>';k++;continue}
+      const t=dayEff(d,r,k);let span=1;
+      while(k+span<d.slots.length&&du.on[k+span]&&String(r.cells[d.slots[k+span].id]||"").trim()===CONT)span++;
+      const kd=t?dayKind(d,t):"";const lab=du.lab.slice(k,k+span).filter(Boolean).join("・");
+      h+='<td'+(span>1?' colspan="'+span+'"':"")+(kd?' class="dk-'+kd+'"':"")+'>'+(lab?'<span class="tm">'+esc(lab)+'</span>':"")+esc(t)+(span>1?'<span class="arr">'+CONT+'</span>':"")+'</td>';
+      k+=span;
+    }
+    h+='</tr>';
+  });
+  return h+dayChkRow(e)+'</tbody></table>';
+}
+/* 入力用の表 */
+function dayEditHTML(e){
+  const d=e.day,last=d.rows.length-1;
+  let h='<table class="dg ed" style="min-width:'+(10.5+d.slots.length*9)+'em"><colgroup><col style="width:10.5em">'+d.slots.map(()=>'<col style="min-width:9em">').join("")+'</colgroup><thead><tr><th class="nm">名前・勤務</th>'+d.slots.map((s,k)=>'<th data-dh="'+k+'">'+slotHead(s)+'</th>').join("")+'</tr></thead><tbody>';
+  d.rows.forEach((r,ri)=>{
+    h+='<tr><th class="nm"><input data-p="day.rows.'+ri+'.name" value="'+esc(r.name)+'" aria-label="名前" placeholder="名前"><div class="tms"><span>出勤</span><input type="time" data-p="day.rows.'+ri+'.in" value="'+esc(r.in||"")+'" aria-label="'+esc(r.name)+'の出勤"><span>退勤</span><input type="time" data-p="day.rows.'+ri+'.out" value="'+esc(r.out||"")+'" aria-label="'+esc(r.name)+'の退勤"></div><div class="rb"><button class="x" data-act="dayUp" data-i="'+ri+'"'+(ri?"":" disabled")+' aria-label="上へ">↑</button><button class="x" data-act="dayDown" data-i="'+ri+'"'+(ri<last?"":" disabled")+' aria-label="下へ">↓</button><button class="x" data-act="dayAskDel" data-k="rows" data-i="'+ri+'" aria-label="'+esc(r.name)+'の行を消す">'+svg("trash",14)+'</button></div></th>'+
+      d.slots.map((s,k)=>'<td data-dc="'+ri+':'+k+'"><span class="tm"></span><input data-p="day.rows.'+ri+'.cells.'+s.id+'" value="'+esc(r.cells[s.id]||"")+'" list="dayposts" aria-label="'+esc(r.name)+'・'+esc(s.name)+'"></td>').join("")+'</tr>';
+  });
+  return h+dayChkRow(e)+'</tbody></table>';
+}
+function dayDelConfirm(e){
+  const x=S.ui.dayDel;if(!x)return "";const d=e.day,it=d[x.k]&&d[x.k][x.i];if(!it){S.ui.dayDel=null;return ""}
+  const nm=x.k==="rows"?"「"+(it.name||"名前なし")+"」の行":"時間帯「"+(it.name||"名前なし")+"」";
+  return '<div class="confirm" role="alertdialog" aria-label="削除の確認"><b>'+esc(nm)+'を消しますか？</b><span class="small">'+(x.k==="rows"?"この人のマスの中身も消えます。":"この時間帯の列のマスの中身も消えます。")+'元に戻せません。</span><div class="row"><button class="danger" data-act="dayDoDel">'+svg("trash",16)+'消す</button><button class="b2" data-act="dayNoDel">やめる</button></div></div>';
+}
+function vDay(){
+  const e=ev(),d=dayInit(e);
+  if(S.ui.dayEdit==null)S.ui.dayEdit=!d.rows.length||!d.slots.length;
+  const edit=S.ui.dayEdit;
+  let h='<div class="sec"><h2>'+IC("clock","--k-o")+'当日の動き（だれが・いつ・どこで）</h2>';
+  h+='<p class="small muted" style="margin:0">本番の日に、だれがどの時間にどこで動くかを1枚で見る表です。マスに持ち場の名前（受付・門前・園庭 など）を書くと色がつき、下の「抜けチェック」で人数を数えます。「→」だけのマスは左と同じです。</p>';
+  h+='<div class="row"><button class="'+(edit?"b2":"b")+'" data-act="dayMode" data-i="0" aria-pressed="'+(!edit)+'">全体を見る</button><button class="'+(edit?"b":"b2")+'" data-act="dayMode" data-i="1" aria-pressed="'+edit+'">入力する</button><button class="b2 bi" data-act="dayPrint">'+svg("print",16)+'当日の動きを印刷（A4横）</button></div>';
+  h+='<div id="dayal"></div>'+dayDelConfirm(e);
+  if(!edit){
+    if(!d.slots.length||!d.rows.length)h+='<p class="empty">まだ表がありません。「入力する」から、時間帯と職員を足してください。</p>';
+    else h+=dayLegend()+'<div class="tw card">'+dayGridHTML(e)+'</div>';
+    return h+'</div>';
+  }
+  /* 1. 時間帯 */
+  h+='</div><div class="sec"><h2>'+IC("clock","--k-o")+'1. 時間帯（表の列）</h2><div class="tw card"><table><thead><tr><th>名前</th><th>始まり</th><th>終わり</th><th>対象クラス</th><th></th></tr></thead><tbody>'+
+    (d.slots.length?d.slots.map((s,k)=>'<tr><td><input data-p="day.slots.'+k+'.name" value="'+esc(s.name)+'" aria-label="時間帯の名前"></td><td><input type="time" data-p="day.slots.'+k+'.from" value="'+esc(s.from||"")+'" aria-label="始まり"></td><td><input type="time" data-p="day.slots.'+k+'.to" value="'+esc(s.to||"")+'" aria-label="終わり"></td><td><div class="row" style="gap:2px 10px">'+CLASSES.map(c=>'<label class="row" style="gap:3px;font-size:13px;white-space:nowrap"><input type="checkbox" data-act="dayCls" data-i="'+k+'" data-c="'+esc(c[0])+'"'+(s.cls.indexOf(c[0])>=0?" checked":"")+'>'+esc(cshort(c[0]))+'</label>').join("")+'</div></td><td><button class="x" data-act="dayAskDel" data-k="slots" data-i="'+k+'" aria-label="この時間帯を消す">'+svg("trash",16)+'</button></td></tr>').join(""):'<tr><td colspan="5" class="empty">まだありません。下から足してください（例：1部・2部・3部・片付け）。</td></tr>')+
+    '</tbody></table><div class="row frow" style="margin-top:10px">'+field("名前",DR("slot.name",{ph:"例：1部"}))+field("始まり",DR("slot.from",{t:"time"}))+field("終わり",DR("slot.to",{t:"time"}))+'<button class="b2 bi" data-act="daySlot">'+svg("plus",16)+'時間帯を足す</button></div><p class="small muted" style="margin:6px 0 0">「片付け」のように時刻がない時間帯は、空のままで大丈夫です（前の時間帯の終わりから続くものとして扱います）。</p></div></div>';
+  /* 2. 表 */
+  h+='<div class="sec"><h2>'+IC("people","--k-o")+'2. 職員ごとの動き</h2>';
+  if(!d.slots.length)h+='<p class="empty">先に時間帯を足すと、ここに表が出ます。</p>';
+  else h+=dayLegend()+'<div class="tw card">'+dayEditHTML(e)+'</div><p class="small muted" style="margin:0">マスを押すと持ち場の候補が出ます（候補にない言葉もそのまま書けます。例：「10:45〜門前見張り、園庭」）。出勤・退勤の時刻を入れると、その時間に重ならないマスは斜線になります。</p>';
+  const missing=STAFF.filter(n=>!d.rows.some(r=>r.name===n));
+  h+='<div class="row frow">'+field("名前を足す",'<input data-u="draft.drow" value="'+esc(S.ui.draft.drow)+'" list="daystaff" placeholder="職員の名前">')+'<button class="b2 bi" data-act="dayRow">'+svg("plus",16)+'行を足す</button>'+(missing.length?'<button class="b2 bi" data-act="dayStaff">'+svg("people",16)+'職員名をまとめて並べる（'+missing.length+'人）</button>':"")+'</div></div>';
+  /* 3. 抜けチェック */
+  h+='<div class="sec"><h2>'+IC("alert","--k-o")+'3. 抜けチェック（持ち場ごとに必要な人数）</h2><p class="small muted" style="margin:0">必要な人数を入れた持ち場だけ数えます。マスにその名前が書いてあれば1人と数えます（例：「受付応援」は「受付」に、「門前見張り」は「門前」に入ります）。持ち場の種類は表の色に使います。</p><div class="tw card"><table class="dneed"><thead><tr><th>持ち場</th><th>種類（色）</th>'+d.slots.map(s=>'<th>'+esc(s.name||"（名前なし）")+'</th>').join("")+'<th></th></tr></thead><tbody>'+
+    d.posts.map((p,i)=>'<tr><td><input data-p="day.posts.'+i+'.name" value="'+esc(p.name)+'" aria-label="持ち場の名前"></td><td><select data-p="day.posts.'+i+'.kind" aria-label="種類">'+Object.keys(DAYK).map(k=>'<option value="'+k+'"'+(p.kind===k?" selected":"")+'>'+DAYK[k]+'</option>').join("")+'</select></td>'+d.slots.map(s=>'<td><input type="number" min="0" data-p="day.posts.'+i+'.need.'+s.id+'" value="'+((+p.need[s.id]||0)||"")+'" placeholder="—" aria-label="'+esc(p.name)+'・'+esc(s.name)+'の必要人数"></td>').join("")+'<td><button class="x" data-act="dayPostDel" data-i="'+i+'" aria-label="この持ち場を消す">'+svg("trash",16)+'</button></td></tr>').join("")+
+    '</tbody></table><div class="row frow" style="margin-top:10px">'+field("持ち場を足す",DR("dpost.name",{ph:"例：プール"}))+field("種類（色）",DS("dpost.kind",Object.keys(DAYK).map(k=>[k,DAYK[k]])))+'<button class="b2 bi" data-act="dayPost">'+svg("plus",16)+'足す</button></div></div></div>';
+  h+='<datalist id="dayposts">'+d.posts.filter(p=>String(p.name||"").trim()).map(p=>'<option value="'+esc(p.name)+'"></option>').join("")+['門前見張り','駐車場見張り'].map(n=>'<option value="'+n+'"></option>').join("")+CLASSES.map(c=>'<option value="'+esc(cshort(c[0]))+'クラス"></option>').join("")+'<option value="'+CONT+'">左と同じ</option></datalist>';
+  h+='<datalist id="daystaff">'+missing.map(n=>'<option value="'+esc(n)+'"></option>').join("")+'</datalist>';
+  return h;
+}
+/* 入力中に描き直さずに、色・斜線・出勤退勤・抜けチェックだけ更新する */
+function dayDerived(){
+  const al=$c("dayal");if(!al)return;const e=ev();if(!e||!e.day)return;const d=e.day;
+  const sh=dayShort(e);
+  al.innerHTML=sh.length?'<ul class="plain">'+sh.map(x=>'<li class="al crit"><span class="ai">'+svg("alert",18)+'</span><span>「'+esc(x.slot)+'」の'+esc(x.name)+'が足りません（'+x.have+'/'+x.need+'人）</span></li>').join("")+'</ul>':"";
+  const b=dayBounds(d);
+  d.slots.forEach((s,k)=>{const th=document.querySelector('[data-dh="'+k+'"]');if(th)th.innerHTML=slotHead(s)});
+  d.rows.forEach((r,ri)=>{const du=dayDuty(r,b);d.slots.forEach((s,k)=>{
+    const td=document.querySelector('[data-dc="'+ri+':'+k+'"]');if(!td)return;
+    const inp=td.querySelector("input"),tm=td.querySelector(".tm");
+    if(!du.on[k]){td.className="doff";if(inp)inp.disabled=true;if(tm)tm.textContent="勤務外";return}
+    if(inp)inp.disabled=false;const t=dayEff(d,r,k),kd=t?dayKind(d,t):"";td.className=kd?"dk-"+kd:"";
+    if(tm)tm.textContent=du.lab[k]||""})});
+  const tb=document.querySelector(".dg.ed tbody");
+  if(tb){const old=tb.querySelector("tr.dchk");if(old)old.remove();const html=dayChkRow(e);if(html)tb.insertAdjacentHTML("beforeend",html)}
+}
+
 function vThings(){
   const e=ev();
   let h='<div class="sec"><h2>'+IC("things","--k-g")+'行事の目的</h2><div class="grid">'+
@@ -655,8 +822,21 @@ function sheetHTML(){
   h+='<div class="s-foot">行事管理APP v2　印刷日 '+fmt(todayISO())+'　※個別配慮の情報は印刷に含みません。</div>';
   return h;
 }
-function buildSheet(){const el=document.getElementById("sheet");if(el)el.innerHTML=ev()?sheetHTML():""}
-function doPrint(){if(!ev()){alert_("印刷する行事がありません。先に行事を作ってください。");return}buildSheet();try{window.print()}catch(x){}toast("印刷画面が開かない場合は、⌘P（Windowsは Ctrl+P）を押してください。どの画面からでも、共有用シートが印刷されます。")}
+/* 当日の動きの印刷（A4横）。ボタンを押したときだけ。印刷が終わるか、タブを移ると元の共有用シートに戻る */
+let PRINTDAY=false;
+function daySheetHTML(){
+  const e=ev(),d=dayInit(e);
+  let h='<h1 class="s-title">'+esc(e.name)+'｜当日の動き</h1><div class="s-sub">'+evFY(e)+'年度　本番 '+fmt(e.date)+(e.rainDate?'　予備日 '+fmt(e.rainDate):"")+'　／　最終更新 '+short(e.updatedAt)+'</div>';
+  h+=dayLegend();
+  h+=(d.slots.length&&d.rows.length)?dayGridHTML(e):'<p>まだ表がありません。</p>';
+  h+='<div class="s-foot">行事管理APP v2　印刷日 '+fmt(todayISO())+'　※斜線は勤務外。「→」は左と同じ。</div>';
+  return h;
+}
+function pageSize(){let st=document.getElementById("pgsz");if(!st){st=document.createElement("style");st.id="pgsz";document.head.appendChild(st)}st.textContent=PRINTDAY?"@media print{@page{size:A4 landscape;margin:9mm}}":""}
+function buildSheet(){const el=document.getElementById("sheet");pageSize();if(el)el.innerHTML=ev()?(PRINTDAY?daySheetHTML():sheetHTML()):""}
+function doPrintDay(){if(!ev()){alert_("印刷する行事がありません。先に行事を作ってください。");return}PRINTDAY=true;buildSheet();try{window.print()}catch(x){}toast("印刷画面が開かない場合は、⌘P（Windowsは Ctrl+P）を押してください。横向きにならないときは、印刷画面で「横」を選んでください。")}
+window.addEventListener("afterprint",function(){if(PRINTDAY){PRINTDAY=false;buildSheet()}});
+function doPrint(){if(!ev()){alert_("印刷する行事がありません。先に行事を作ってください。");return}PRINTDAY=false;buildSheet();try{window.print()}catch(x){}toast("印刷画面が開かない場合は、⌘P（Windowsは Ctrl+P）を押してください。どの画面からでも、共有用シートが印刷されます。")}
 
 /* ===== 描画 ===== */
 /* 画面上部の帯：ブラウザ保存なら「全部消す」、シート保存なら保存の状態と知らせ */
@@ -677,7 +857,7 @@ Store.onStatus=function(k,m){
 /* ドライブの写真が届いたら、その写真の枠だけ差し替える（入力中の欄を描き直さないため） */
 Store.onPhoto=function(k,src){document.querySelectorAll("img[data-ph]").forEach(function(im){if(im.getAttribute("data-ph")===k)im.src=src})};
 const phAttr=p=>'src="'+Store.photoSrc(p)+'"'+(String(p).indexOf("drv:")===0?' data-ph="'+esc(p)+'"':"");
-const VIEWS={list:vList,dash:vDash,tasks:vTasks,people:vPeople,things:vThings,money:vMoney,info:vInfo,log:vLog,docs:vDocs};
+const VIEWS={list:vList,dash:vDash,tasks:vTasks,people:vPeople,day:vDay,things:vThings,money:vMoney,info:vInfo,log:vLog,docs:vDocs};
 function render(keepScroll){
   const e=ev();
   const fe=fyEvents(S.ui.fy);
@@ -714,6 +894,7 @@ function derived(){
   const mk=$c("mk");if(mk)mk.disabled=!S.ui.draft.ev.date;
   const fh=$c("fyhint");if(fh)fh.textContent=S.ui.draft.ev.date?fyOf(S.ui.draft.ev.date)+"年度の行事になります":"";
   const pu=$c("phuse");if(pu){const n=S.events.reduce((a,x)=>a+photoCount(x),0);pu.textContent=Store.mode!=="local"?"写真 全部で"+n+"枚（Googleドライブに保存します）":"写真 全部で"+n+"枚・約"+(photoChars()/1e6).toFixed(1)+"MB（このブラウザに入る目安は約"+(PHOTO_LIMIT/1e6).toFixed(1)+"MB。v2ではGoogleドライブに移します）"}
+  dayDerived();
   buildSheet();
 }
 
@@ -736,6 +917,7 @@ document.addEventListener("change",function(x){
     if(t.value===OTHER){S.ui.placeOther=k;S.ui.draft.pwho="";render(true);const w=document.querySelector('[data-pwho="'+k+'"]');if(w)w.focus();return}
     if(t.value){if(!pl.who)pl.who=[];if(pl.who.indexOf(t.value)<0)pl.who.push(t.value);touch()}render(true);return}
   const p=t.getAttribute("data-p"),u=t.getAttribute("data-u"),act=t.getAttribute("data-act");
+  if(act==="dayCls"){const sl=ev().day.slots[Number(t.getAttribute("data-i"))],c=t.getAttribute("data-c");if(!sl)return;const i=sl.cls.indexOf(c);if(t.checked&&i<0)sl.cls.push(c);if(!t.checked&&i>=0)sl.cls.splice(i,1);sl.cls.sort((x,y)=>CLASSES.findIndex(z=>z[0]===x)-CLASSES.findIndex(z=>z[0]===y));touch();render(true);return}
   if(act==="cls"){const e=ev(),c=t.getAttribute("data-i");const i=e.classes.indexOf(c);if(t.checked&&i<0)e.classes.push(c);if(!t.checked&&i>=0)e.classes.splice(i,1);touch();render(true);return}
   if(u){
     if(u.indexOf("draft.")===0){setP(S.ui,u,t.value);derived();return}
@@ -757,7 +939,16 @@ document.addEventListener("change",function(x){
 document.addEventListener("click",function(x){
   const b=x.target.closest("[data-act]");if(!b||b.tagName==="INPUT")return;
   const a=b.getAttribute("data-act"),i=b.getAttribute("data-i"),e=ev(),dr=S.ui.draft;
-  if(a==="go"){S.ui.tab=i;render();window.scrollTo(0,0);return}
+  if(a==="go"){S.ui.tab=i;PRINTDAY=false;S.ui.dayDel=null;render();window.scrollTo(0,0);return}
+  if(a==="dayMode"){S.ui.dayEdit=i==="1";S.ui.dayDel=null;render(true);return}
+  if(a==="dayPrint"){doPrintDay();return}
+  if(a==="dayAskDel"){S.ui.dayDel={k:b.getAttribute("data-k"),i:Number(i)};render(true);window.scrollTo(0,0);return}
+  if(a==="dayNoDel"){S.ui.dayDel=null;render(true);return}
+  if(a==="dayDoDel"){const x=S.ui.dayDel,d=e.day;S.ui.dayDel=null;if(!x||!d||!d[x.k]||!d[x.k][x.i]){render(true);return}
+    const it=d[x.k].splice(x.i,1)[0];if(x.k==="slots"){d.rows.forEach(r=>{delete r.cells[it.id]});d.posts.forEach(p=>{delete p.need[it.id]})}
+    touch();render(true);return}
+  if(a==="dayUp"||a==="dayDown"){const d=e.day,k=Number(i),j=a==="dayUp"?k-1:k+1;if(!d||j<0||j>=d.rows.length)return;const tmp=d.rows[k];d.rows[k]=d.rows[j];d.rows[j]=tmp;touch();render(true);return}
+  if(a==="dayPostDel"){const d=e.day;if(d){d.posts.splice(Number(i),1);touch()}render(true);return}
   if(a==="retry"){if(Store.retry)Store.retry();return}
   if(a==="reload"){location.reload();return}
   if(a==="forget"){Store.forget();location.reload();return}
@@ -788,6 +979,10 @@ document.addEventListener("click",function(x){
   else if(a==="addOT"){e.overtime.push({label:"",hours:0})}
   else if(a==="addNotice"){e.notices.push({what:"",when:"",drafter:"",one:"",ok:false})}
   else if(a==="addCheck"){const tx=String(dr.chk[i]||"").trim();if(!tx){alert_("確認項目を入れてください");return}e.checks.push({id:uid(),cat:i,group:"every",text:tx,done:false,note:"",ref:"",custom:true});dr.chk[i]=""}
+  else if(a==="daySlot"){const x=dr.slot,d=dayInit(e);if(!String(x.name).trim()){alert_("時間帯の名前を入れてください（例：1部）");return}if(x.from&&x.to&&tmin(x.to)<=tmin(x.from)){alert_("終わりは始まりより後の時刻にしてください");return}d.slots.push({id:uid(),name:x.name.trim(),from:x.from||"",to:x.to||"",cls:[]});dr.slot={name:"",from:"",to:""}}
+  else if(a==="dayRow"){const n=String(dr.drow||"").trim(),d=dayInit(e);if(!n){alert_("名前を入れてください");return}d.rows.push({id:uid(),name:n,in:"",out:"",cells:{}});dr.drow=""}
+  else if(a==="dayStaff"){const d=dayInit(e);STAFF.filter(n=>!d.rows.some(r=>r.name===n)).forEach(n=>d.rows.push({id:uid(),name:n,in:"",out:"",cells:{}}))}
+  else if(a==="dayPost"){const x=dr.dpost,d=dayInit(e),n=String(x.name||"").trim();if(!n){alert_("持ち場の名前を入れてください");return}d.posts.push({name:n,kind:x.kind||"ba",need:{},custom:true});dr.dpost={name:"",kind:"ba"}}
   else if(a==="addPlace"){const n=String(dr.place||"").trim();if(!n){alert_("配置の名前を入れてください");return}e.places.push({name:n,need:0,custom:true});dr.place=""}
   else if(a==="addTask"){const t=dr.task;if(!String(t.title).trim()||!t.due){alert_("内容と期限を入れてください");return}e.tasks.push({id:uid(),cat:t.cat,title:t.title.trim(),owner:t.owner,start:t.start||t.due,due:t.due,status:t.status||"未着手"});dr.task={cat:"物",title:"",owner:"",start:"",due:"",status:"未着手"};S.ui.whoOther={}}
   else if(a==="addLog"){const l=dr.log;if(!l.when||!String(l.one).trim()){alert_("いつ・言いたい一言を入れてください");return}e.logs.push({when:l.when,where:l.where,from:l.from,to:l.to,one:l.one.trim(),ref:l.ref,ok:false});if(!touch()){e.logs.pop();render(true);return}dr.log=blankLog();render(true);return}
