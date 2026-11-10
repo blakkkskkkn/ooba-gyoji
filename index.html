@@ -859,7 +859,7 @@ function vProg(){
   let h='<div class="sec"><h2>'+IC("star","--k-p")+'プログラム（保護者に配る）</h2>';
   h+='<p class="small muted" style="margin:0">部ごとにA4縦1枚で印刷します。日付は行事の本番の日、「子どもたちのココを見て！」は「伝えること」の「今日見てほしい育ち」から、その部に出るクラスの分だけ載ります。</p>';
   h+='<div class="row"><button class="'+(edit?"b2":"b")+'" data-act="progMode" data-i="0" aria-pressed="'+(!edit)+'">仕上がりを見る</button><button class="'+(edit?"b":"b2")+'" data-act="progMode" data-i="1" aria-pressed="'+edit+'">入力する</button><button class="b2 bi" data-act="progPrint">'+svg("print",16)+'プログラムを印刷（A4縦・部ごとに1枚）</button></div>';
-  h+=progDelConfirm(e);
+  h+=progDelConfirm(e)+progWarnBox();
   if(!edit){
     if(!g.parts.length)h+='<p class="empty">まだ部がありません。「入力する」から部を足してください。</p>';
     else h+='<div id="pgal"></div><div class="pgw">'+g.parts.map(pt=>progPageHTML(e,pt)).join("")+'</div>';
@@ -870,7 +870,7 @@ function vProg(){
   if(!g.parts.length)h+='<p class="empty">まだありません。下から足してください（部が1つだけの行事は、1つだけ足します）。</p>';
   g.parts.forEach((pt,i)=>{
     const last=pt.items.length-1,opts=[["","（クラスなし）"]].concat(pt.cls.map(c=>[c,c]),[[ALLCLS,ALLCLS]]);
-    h+='<div class="card stack pgpart"><div class="row frow">'+field("部の名前",I("prog.parts."+i+".name",{ph:"例：第2部"}))+field("集合",I("prog.parts."+i+".meet",{t:"time"}))+field("始まり",I("prog.parts."+i+".from",{t:"time"}))+field("終わり",I("prog.parts."+i+".to",{t:"time"}))+'<button class="x" data-act="progAskDel" data-i="'+i+'" aria-label="この部を消す">'+svg("trash",16)+'</button></div>';
+    h+='<div class="card stack pgpart"><div class="row frow">'+field("部の名前",I("prog.parts."+i+".name",{ph:"例：第2部"}))+field("集合",I("prog.parts."+i+".meet",{t:"time"}))+field("始まり",I("prog.parts."+i+".from",{t:"time"}))+field("終わり",I("prog.parts."+i+".to",{t:"time"}))+'<button class="x" data-act="progAskDel" data-i="'+i+'" aria-label="この部を消す">'+svg("trash",16)+'</button></div><div data-ptw="'+i+'"'+(pgTimeBad(pt)?"":" hidden")+'>'+(pgTimeBad(pt)?PG_TIME_MSG:"")+'</div>';
     h+='<div><span class="small muted">出るクラス</span><div class="row" style="gap:2px 12px">'+CLASSES.map(c=>'<label class="row" style="gap:3px;font-size:14px;white-space:nowrap"><input type="checkbox" data-act="progCls" data-i="'+i+'" data-c="'+esc(c[0])+'"'+(pt.cls.indexOf(c[0])>=0?" checked":"")+'>'+esc(c[0])+'</label>').join("")+'</div></div>';
     h+='<div class="tw"><table class="pgit"><thead><tr><th style="width:3em">順</th><th>演目</th><th style="width:11em">クラス</th><th style="width:10em">種類</th><th style="width:7.5em"></th></tr></thead><tbody>'+
       (pt.items.length?pt.items.map((x,j)=>{const o=opts.some(z=>z[0]===x.cls)?opts:opts.concat([[x.cls,x.cls]]);return '<tr><td class="num">'+(j+1)+'</td><td><input data-p="prog.parts.'+i+'.items.'+j+'.title" value="'+esc(x.title)+'" placeholder="例：さがせ！ダンゴムシ" aria-label="演目"></td><td>'+SEL("prog.parts."+i+".items."+j+".cls",o)+'</td><td>'+KIND("prog.parts."+i+".items."+j+".kind",x.kind)+'</td><td class="ord"><button class="x" data-act="progUp" data-i="'+i+'" data-j="'+j+'"'+(j?"":" disabled")+' aria-label="上へ">↑</button><button class="x" data-act="progDown" data-i="'+i+'" data-j="'+j+'"'+(j<last?"":" disabled")+' aria-label="下へ">↓</button><button class="x" data-act="progItemDel" data-i="'+i+'" data-j="'+j+'" aria-label="この演目を消す">'+svg("trash",14)+'</button></td></tr>'}).join(""):'<tr><td colspan="5" class="empty">演目はまだありません。</td></tr>')+
@@ -886,13 +886,48 @@ function vProg(){
     list.map(x=>{const k=e.kids[x.i];const c=CLASSES.find(z=>z[0]===k.cls)||CLASSES[0];return '<tr><td style="white-space:nowrap"><span class="cls" style="background:var('+c[2]+')"></span>'+esc(k.cls)+'<div class="gc" data-gc="'+x.i+'"></div></td><td><textarea data-p="kids.'+x.i+'.growth" rows="3" data-gci="'+x.i+'">'+esc(k.growth)+'</textarea></td></tr>'}).join("")+'</tbody></table></div></div>';
   return h;
 }
-/* 育ちの字数、1枚に収まっているか（入力中に描き直さずに更新） */
+/* 終わりの時刻が、始まりより後になっていない部（「10:00〜9:00」のような入れ間違い） */
+const pgTimeBad=pt=>{const a=tmin(pt.from),b=tmin(pt.to);return a!=null&&b!=null&&b<=a};
+const PG_TIME_MSG='<span class="chip warn">終わりの時刻が、始まりより後になっていません。</span>';
+/* 1枚に収まっていない部を数える（pages は .pg の並び）。下に切れる・横に切れるを分けて返す。飾りのにじみ（はみ出してよい）は数えない */
+function pgOver(pages){
+  return Array.from(pages).map((p,k)=>{
+    const cs=Array.from(p.children).filter(c=>!c.classList.contains("pg-w")),l=cs[cs.length-1];
+    const down=!!l&&l.getBoundingClientRect().bottom>p.getBoundingClientRect().bottom-2,side=cs.some(c=>c.scrollWidth>c.clientWidth+8);
+    return down||side?{k:k,down:down,side:side}:null}).filter(Boolean);
+}
+/* 印刷する前に直したほうがよい所を、文にして返す（時刻の入れ間違い・1枚に収まらない部） */
+function progProblems(e,over){
+  const out=[];if(!e.prog)return out;
+  e.prog.parts.forEach((pt,k)=>{
+    const nm="「"+esc(pt.name||"名前なし")+"」",o=over.find(x=>x.k===k);
+    if(pgTimeBad(pt))out.push(nm+"の終わりの時刻（"+esc(tlab(pt.to))+"）が、始まり（"+esc(tlab(pt.from))+"）より後になっていません。時刻を直してください。");
+    if(o&&o.down)out.push(nm+"が1枚に収まっていません。下が切れて印刷されます。演目や育ちの文を短くしてください。");
+    if(o&&o.side)out.push(nm+"に、横にはみ出している行があります。右が切れて印刷されます。長い言葉を短くしてください。")});
+  return out;
+}
+const pgWarnList=a=>'<ul class="plain">'+a.map(m=>'<li class="al warn"><span class="ai">'+svg("bang",18)+'</span><span>'+m+'</span></li>').join("")+'</ul>';
+/* 入力画面から「印刷」を押したときも確かめる：画面の外に仮に並べて測る */
+function progCheck(){
+  const e=ev(),g=progInit(e);if(!g.parts.length)return [];
+  const box=document.createElement("div");box.style.cssText="position:absolute;left:-9999px;top:0;width:794px;visibility:hidden";
+  box.innerHTML=progSheetHTML();document.body.appendChild(box);
+  let over=[];try{over=pgOver(box.querySelectorAll(".pg"))}catch(x){}
+  document.body.removeChild(box);
+  return progProblems(e,over);
+}
+function progWarnBox(){
+  const w=S.ui.progWarn;if(!w||!w.length)return "";
+  return '<div class="confirm" role="alertdialog" aria-label="印刷の前の確認"><b>印刷の前に、直したほうがよい所があります。</b>'+pgWarnList(w)+'<div class="row"><button class="b" data-act="progPrintNo">やめて直す</button><button class="b2" data-act="progPrintGo">このまま印刷する</button></div></div>';
+}
+/* 育ちの字数、時刻の入れ間違い、1枚に収まっているか（入力中に描き直さずに更新） */
 function progDerived(){
   const e=ev();if(!e)return;
+  document.querySelectorAll("[data-ptw]").forEach(el=>{const pt=e.prog&&e.prog.parts[Number(el.getAttribute("data-ptw"))],bad=!!pt&&pgTimeBad(pt);el.hidden=!bad;el.innerHTML=bad?PG_TIME_MSG:""});
   document.querySelectorAll("[data-gc]").forEach(el=>{const i=Number(el.getAttribute("data-gc")),ta=document.querySelector('[data-gci="'+i+'"]');const n=(ta?ta.value:String((e.kids[i]||{}).growth||"")).replace(/\s/g,"").length;el.textContent=n+"字"+(n>GROW_MAX?"（長め）":"");el.className="gc"+(n>GROW_MAX?" over":"")});
   const al=$c("pgal");if(!al||!e.prog)return;
-  const bad=Array.from(document.querySelectorAll(".pgw .pg")).map((p,k)=>{const l=Array.from(p.children).filter(c=>!c.classList.contains("pg-w")).pop();return l&&l.getBoundingClientRect().bottom>p.getBoundingClientRect().bottom-2?k:-1}).filter(k=>k>=0);  /* 飾りのにじみ（はみ出してよい）は数えない */
-  al.innerHTML=bad.length?'<ul class="plain">'+bad.map(k=>'<li class="al warn"><span class="ai">'+svg("bang",18)+'</span><span>「'+esc((e.prog.parts[k]||{}).name||"名前なし")+'」が1枚に収まっていません。下が切れて印刷されます。演目や育ちの文を短くしてください。</span></li>').join("")+'</ul>':"";
+  const bad=progProblems(e,pgOver(document.querySelectorAll(".pgw .pg")));
+  al.innerHTML=bad.length?pgWarnList(bad):"";
 }
 
 function vThings(){
@@ -987,7 +1022,9 @@ function daySheetHTML(){
 function pageSize(){let st=document.getElementById("pgsz");if(!st){st=document.createElement("style");st.id="pgsz";document.head.appendChild(st)}st.textContent=PRINTDAY?"@media print{@page{size:A4 landscape;margin:9mm}}":PRINTPROG?"@media print{@page{size:A4 portrait;margin:0}}":""}
 /* プログラムの印刷（A4縦・部ごとに1枚）。ボタンを押したときだけ */
 function progSheetHTML(){const e=ev(),g=progInit(e);return g.parts.length?g.parts.map(pt=>progPageHTML(e,pt)).join(""):'<p>まだ部がありません。</p>'}
-function doPrintProg(){if(!ev()){alert_("印刷する行事がありません。先に行事を作ってください。");return}PRINTDAY=false;PRINTPROG=true;buildSheet();try{window.print()}catch(x){}toast("印刷画面が開かない場合は、⌘P（Windowsは Ctrl+P）を押してください。用紙はA4縦・余白なし（または最小）、「背景のグラフィック」を入れると色が出ます。")}
+function doPrintProg(force){if(!ev()){alert_("印刷する行事がありません。先に行事を作ってください。");return}
+  if(!force){const w=progCheck();if(w.length){S.ui.progWarn=w;render(true);window.scrollTo(0,0);return}}  /* 切れる部・時刻の入れ間違いがあれば、印刷の前に知らせる */
+  S.ui.progWarn=null;PRINTDAY=false;PRINTPROG=true;buildSheet();try{window.print()}catch(x){}toast("印刷画面が開かない場合は、⌘P（Windowsは Ctrl+P）を押してください。用紙はA4縦・余白なし（または最小）、「背景のグラフィック」を入れると色が出ます。")}
 function buildSheet(){const el=document.getElementById("sheet");pageSize();if(el)el.innerHTML=ev()?(PRINTDAY?daySheetHTML():PRINTPROG?progSheetHTML():sheetHTML()):""}
 function doPrintDay(){if(!ev()){alert_("印刷する行事がありません。先に行事を作ってください。");return}PRINTDAY=true;buildSheet();try{window.print()}catch(x){}toast("印刷画面が開かない場合は、⌘P（Windowsは Ctrl+P）を押してください。横向きにならないときは、印刷画面で「横」を選んでください。")}
 window.addEventListener("afterprint",function(){if(PRINTDAY||PRINTPROG){PRINTDAY=false;PRINTPROG=false;buildSheet()}});
@@ -1055,8 +1092,24 @@ function derived(){
 }
 
 /* ===== 操作 ===== */
+/* 打っている途中の文字も、その場で保存の対象にする（欄の外を触る前にページを閉じても消えないように）。
+   画面は描き直さない。シート保存は store.js が少し待ってまとめて送る。ブラウザ保存は書き込みが重いので0.4秒待つ */
+let liveT=0;
+const liveFlush=()=>{if(liveT){clearTimeout(liveT);liveT=0;touch()}};
+function liveP(t){
+  const p=t&&t.getAttribute&&t.getAttribute("data-p");if(!p||!ev()||t.getAttribute("data-who"))return;
+  if(!(t.tagName==="TEXTAREA"||(t.tagName==="INPUT"&&["text","time","number","search","tel","url"].indexOf(t.type)>=0)))return;
+  let v=t.type==="number"?(t.value===""?0:Number(t.value)):t.value;
+  if(t.classList.contains("ttl"))v=v.replace(/\s*\n\s*/g," ");
+  try{setP(ev(),p,v)}catch(x){return}
+  if(Store.mode==="local"){clearTimeout(liveT);liveT=setTimeout(function(){liveT=0;touch()},400)}else touch();
+  if(p.indexOf("prog.")===0)progDerived();
+}
+document.addEventListener("compositionend",function(x){liveP(x.target)});  /* 日本語の変換を確定したとき */
+window.addEventListener("pagehide",liveFlush);
 document.addEventListener("input",function(ev_){
   const t=ev_.target,u=t.getAttribute&&t.getAttribute("data-u");
+  if(!ev_.isComposing)liveP(t);
   if(t.classList&&t.classList.contains("ttl"))fitTA(t);
   if(t.getAttribute&&t.getAttribute("data-gci")!==null)progDerived();
   if(u&&u.indexOf("draft.")===0){setP(S.ui,u,t.value);derived()}
@@ -1097,9 +1150,11 @@ document.addEventListener("change",function(x){
 document.addEventListener("click",function(x){
   const b=x.target.closest("[data-act]");if(!b||b.tagName==="INPUT")return;
   const a=b.getAttribute("data-act"),i=b.getAttribute("data-i"),e=ev(),dr=S.ui.draft;
-  if(a==="go"){S.ui.tab=i;PRINTDAY=false;PRINTPROG=false;S.ui.dayDel=null;S.ui.progDel=null;render();window.scrollTo(0,0);return}
-  if(a==="progMode"){S.ui.progEdit=i==="1";S.ui.progDel=null;render(true);return}
+  if(a==="go"){S.ui.tab=i;PRINTDAY=false;PRINTPROG=false;S.ui.dayDel=null;S.ui.progDel=null;S.ui.progWarn=null;render();window.scrollTo(0,0);return}
+  if(a==="progMode"){S.ui.progEdit=i==="1";S.ui.progDel=null;S.ui.progWarn=null;render(true);return}
   if(a==="progPrint"){doPrintProg();return}
+  if(a==="progPrintGo"){S.ui.progWarn=null;render(true);doPrintProg(true);return}
+  if(a==="progPrintNo"){S.ui.progWarn=null;render(true);return}
   if(a==="progAskDel"){S.ui.progDel=Number(i);render(true);window.scrollTo(0,0);return}
   if(a==="progNoDel"){S.ui.progDel=null;render(true);return}
   if(a==="progDoDel"){const k=S.ui.progDel;S.ui.progDel=null;if(k!=null&&e.prog&&e.prog.parts[k]){e.prog.parts.splice(k,1);touch()}render(true);return}
