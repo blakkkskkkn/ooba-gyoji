@@ -49,6 +49,9 @@ h2{font-size:19px} h3{font-size:16px}
 .ctl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
 .ctl label{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--hd-ink)}
 .banner{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn);border-radius:8px;padding:8px 12px;font-size:13px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between}
+.bline{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.hk{font-size:12px;color:var(--crit);background:var(--crit-bg);border-radius:6px;padding:4px 6px;margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hkf{outline:2px solid var(--crit)}
 .tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin-block:12px 18px;scrollbar-width:thin}
 @media (min-width:700px){.tabs{flex-wrap:wrap;overflow-x:visible}}
 .tab{flex:none;display:flex;align-items:center;gap:7px;border:0;background:none;color:var(--muted);font:inherit;font-weight:700;padding:8px 12px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
@@ -350,6 +353,7 @@ label.b2.bi{cursor:pointer}
   <filter id="pgwc2" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>
 </svg>
 
+<script src="merge.js"></script>
 <script src="store.js"></script>
 <script>
 (function(){
@@ -374,7 +378,8 @@ const fmt=s=>{if(!s)return"未定";const d=D(s);return (d.getMonth()+1)+"/"+d.ge
 const short=s=>{if(!s)return"";const d=D(s);return (d.getMonth()+1)+"/"+d.getDate()};
 const todayISO=()=>iso(new Date());
 const yen=n=>(Math.round(n)||0).toLocaleString("ja-JP")+"円";
-let uidN=Date.now();const uid=()=>"u"+(uidN++);
+/* 行の番号：時刻＋この画面での連番＋ランダムな4文字（人ごとにも、同じ瞬間に作る行どうしも重ならないように。設計メモ5節） */
+const uid=(()=>{let n=0;return()=>"u"+Date.now().toString(36)+(n++).toString(36)+Math.random().toString(36).slice(2,6).padEnd(4,"0")})();
 const getP=(o,p)=>p.split(".").reduce((a,k)=>a==null?a:a[k],o);
 const setP=(o,p,v)=>{const k=p.split(".");const last=k.pop();k.reduce((a,x)=>a[x],o)[last]=v};
 
@@ -477,10 +482,10 @@ function newEvent(name,date){
   return {id:uid(),name,date,rainDate:"",updatedAt:todayISO(),
     purpose:{who:"",what:"",why:""},success:{child:"",parent:"",staff:""},delegate:{ok:"",ask:""},
     team:[],lead:"",commander:"",photographer:"unset",classes:CLASSES.map(c=>c[0]),
-    kids:CLASSES.map(c=>({cls:c[0],growth:"",daily:""})),
+    kids:CLASSES.map(c=>({id:uid(),cls:c[0],growth:"",daily:""})),
     checks:templateChecks(),tasks:[],
     staff:{"正規":0,"有期":0,"パート":0},
-    places:["受付・案内","各クラスの進行","全体アナウンス","安全・けが対応","駐車場・周辺","保護者対応","司令塔"].map(n=>({name:n,need:0})),
+    places:["受付・案内","各クラスの進行","全体アナウンス","安全・けが対応","駐車場・周辺","保護者対応","司令塔"].map(n=>({id:uid(),name:n,need:0})),
     care:[],familyLimit:"",childcare:"",orders:[],budget:0,overtime:[],rate:0,
     notices:[],phrase:"",logs:[],snaps:[],retros:[],prevTaskCount:""};
 }
@@ -573,7 +578,7 @@ function checksBlock(e,cat){
   const items=e.checks.map((k,i)=>({k,i})).filter(x=>x.k.cat===cat);
   let h='<div class="gtitle">毎回の確認（行事のチェックリスト）</div>';
   if(!items.length)h+='<p class="empty">この分類の確認項目はありません。</p>';
-  items.forEach(x=>{h+='<div class="chk'+(x.k.done?" done":"")+'" id="chk_'+x.k.id+'"><input type="checkbox" data-p="checks.'+x.i+'.done"'+(x.k.done?" checked":"")+'><div class="t"><div class="tt">'+esc(x.k.text)+" "+refLink(x.k.ref)+'</div><input type="text" data-p="checks.'+x.i+'.note" value="'+esc(x.k.note)+'" placeholder="メモ（いつ・誰に・どう決めたか）"></div>'+(x.k.custom?'<button class="x" data-act="del" data-k="checks" data-i="'+x.i+'" aria-label="この確認項目を削除">'+svg("trash",16)+'</button>':"")+'</div>'});
+  items.forEach(x=>{h+='<div class="chk'+(x.k.done?" done":"")+'" id="chk_'+esc(x.k.id)+'"><input type="checkbox" data-p="checks.'+x.i+'.done"'+(x.k.done?" checked":"")+'><div class="t"><div class="tt">'+esc(x.k.text)+" "+refLink(x.k.ref)+'</div><input type="text" data-p="checks.'+x.i+'.note" value="'+esc(x.k.note)+'" placeholder="メモ（いつ・誰に・どう決めたか）"></div>'+(x.k.custom?'<button class="x" data-act="del" data-k="checks" data-i="'+x.i+'" aria-label="この確認項目を削除">'+svg("trash",16)+'</button>':"")+'</div>'});
   /* 行事ごとに任意で足す。足した項目だけ消せる */
   h+='<div class="row" style="margin-top:10px;align-items:flex-end"><label class="field" style="flex:1 1 260px"><span>確認項目を追加</span>'+DR("chk."+cat,{ph:"この行事で確認したいこと"})+'</label><button class="b2" data-act="addCheck" data-i="'+cat+'">追加する</button></div>';
   return h;
@@ -594,8 +599,8 @@ function vList(){
     const nph=photoCount(e);
     h+='<div class="card stack"><div class="row" style="justify-content:space-between"><h3>'+esc(e.name)+'</h3>'+(e.id===cur.id?'<span class="chip acc">表示中</span>':"")+'</div><div>本番 <b>'+fmt(e.date)+'</b>'+(d==null?"":d>=0?'　あと<b class="num">'+d+'</b>日':'　終了')+'</div>'+bar(pct)+'<div class="row small"><span class="num">進み具合 '+pct+'%</span>'+sig+(nph?'<span class="muted">'+svg("camera",13)+' 写真 '+nph+'枚</span>':"")+'</div>'+(ar?'<div class="small muted">保管は'+ymLabel(keepUntil(evFY(e)))+'まで</div>':"")+
       (S.ui.confirmDel===e.id?
-        '<div class="confirm" role="alertdialog" aria-label="削除の確認"><b>「'+esc(e.name)+'」を削除しますか？</b><span class="small">タスク '+e.tasks.length+'件・伝達ログ '+e.logs.length+'件・振り返り '+(e.retros||[]).length+'件・写真 '+nph+'枚もすべて消えます。元に戻せません。</span>'+((e.retros||[]).length?'<span class="small">振り返りの「次はこうする」は、次の行事を作るときに使います。まだ次の行事を作っていなければ、先に作ってください。</span>':"")+'<div class="row"><button class="danger" data-act="doDel" data-i="'+e.id+'">'+svg("trash",16)+'削除する</button><button class="b2" data-act="noDel">やめる</button></div></div>':
-        '<div class="row"><button class="b2 bi" data-act="open" data-i="'+e.id+'">この行事を開く</button><button class="b2 bi" data-act="askDel" data-i="'+e.id+'" aria-label="「'+esc(e.name)+'」を削除">'+svg("trash",16)+'削除</button></div>')+'</div>'});
+        '<div class="confirm" role="alertdialog" aria-label="削除の確認"><b>「'+esc(e.name)+'」を削除しますか？</b><span class="small">タスク '+e.tasks.length+'件・伝達ログ '+e.logs.length+'件・振り返り '+(e.retros||[]).length+'件・写真 '+nph+'枚もすべて消えます。元に戻せません。</span>'+((e.retros||[]).length?'<span class="small">振り返りの「次はこうする」は、次の行事を作るときに使います。まだ次の行事を作っていなければ、先に作ってください。</span>':"")+'<div class="row"><button class="danger" data-act="doDel" data-i="'+esc(e.id)+'">'+svg("trash",16)+'削除する</button><button class="b2" data-act="noDel">やめる</button></div></div>':
+        '<div class="row"><button class="b2 bi" data-act="open" data-i="'+esc(e.id)+'">この行事を開く</button><button class="b2 bi" data-act="askDel" data-i="'+esc(e.id)+'" aria-label="「'+esc(e.name)+'」を削除">'+svg("trash",16)+'削除</button></div>')+'</div>'});
   h+='</div></div><div class="sec"><h2>'+IC("plus")+'次の行事を作る</h2><div class="card stack"><p class="small muted" style="margin:0">振り返りの「次はこうする」（誰が・何週間前・何を）が、新しい行事のタスクとして入ります。確認項目は、毎回のひな形から新しく始まります。個別配慮の表と写真はコピーされません。年度は本番の日で決まります（4月1日〜3月31日が1年度）。</p><div class="row">'+field("行事の名前",DR("ev.name"))+field("本番の日",DR("ev.date",{t:"date"}))+'<span class="small muted" id="fyhint"></span></div><div class="row"><button class="b" id="mk" data-act="mk"'+(S.ui.draft.ev.date?"":" disabled")+'>振り返りから '+next+' 件のタスクを入れて作る</button></div></div></div>';
   return h;
 }
@@ -683,7 +688,7 @@ const DAYK={cls:"クラス",uk:"受付・係",mi:"見張り",ho:"保育",ba:"園
 const DAYPOSTS=[["クラス","cls"],["受付","uk"],["係","uk"],["門前","mi"],["駐車場","mi"],["保育","ho"],["園庭","ba"],["ホール","ba"],["日誌","ni"],["フリー","fr"]];
 const CONT="→";
 function dayInit(e){
-  if(!e.day)e.day={slots:[],posts:DAYPOSTS.map(p=>({name:p[0],kind:p[1],need:{}})),rows:[]};
+  if(!e.day)e.day={slots:[],posts:DAYPOSTS.map((p,k)=>({id:"m:day.posts:"+k,name:p[0],kind:p[1],need:{}})),rows:[]};
   const d=e.day;d.slots=d.slots||[];d.posts=d.posts||[];d.rows=d.rows||[];
   d.posts.forEach(p=>{if(!p.need)p.need={}});d.rows.forEach(r=>{if(!r.cells)r.cells={}});d.slots.forEach(s=>{if(!s.cls)s.cls=[]});
   const dr=S.ui.draft;if(!dr.slot)dr.slot={name:"",from:"",to:""};if(dr.drow==null)dr.drow="";if(!dr.dpost)dr.dpost={name:"",kind:"ba"};
@@ -748,7 +753,7 @@ function dayEditHTML(e){
   let h='<table class="dg ed" style="min-width:'+(10.5+d.slots.length*9)+'em"><colgroup><col style="width:10.5em">'+d.slots.map(()=>'<col style="min-width:9em">').join("")+'</colgroup><thead><tr><th class="nm">名前・勤務</th>'+d.slots.map((s,k)=>'<th data-dh="'+k+'">'+slotHead(s)+'</th>').join("")+'</tr></thead><tbody>';
   d.rows.forEach((r,ri)=>{
     h+='<tr><th class="nm"><input data-p="day.rows.'+ri+'.name" value="'+esc(r.name)+'" aria-label="名前" placeholder="名前"><div class="tms"><span>出勤</span><input type="time" data-p="day.rows.'+ri+'.in" value="'+esc(r.in||"")+'" aria-label="'+esc(r.name)+'の出勤"><span>退勤</span><input type="time" data-p="day.rows.'+ri+'.out" value="'+esc(r.out||"")+'" aria-label="'+esc(r.name)+'の退勤"></div><div class="rb"><button class="x" data-act="dayUp" data-i="'+ri+'"'+(ri?"":" disabled")+' aria-label="上へ">↑</button><button class="x" data-act="dayDown" data-i="'+ri+'"'+(ri<last?"":" disabled")+' aria-label="下へ">↓</button><button class="x" data-act="dayAskDel" data-k="rows" data-i="'+ri+'" aria-label="'+esc(r.name)+'の行を消す">'+svg("trash",14)+'</button></div></th>'+
-      d.slots.map((s,k)=>'<td data-dc="'+ri+':'+k+'"><span class="tm"></span><input data-p="day.rows.'+ri+'.cells.'+s.id+'" value="'+esc(r.cells[s.id]||"")+'" list="dayposts" aria-label="'+esc(r.name)+'・'+esc(s.name)+'"></td>').join("")+'</tr>';
+      d.slots.map((s,k)=>'<td data-dc="'+ri+':'+k+'"><span class="tm"></span><input data-p="day.rows.'+ri+'.cells.'+esc(s.id)+'" value="'+esc(r.cells[s.id]||"")+'" list="dayposts" aria-label="'+esc(r.name)+'・'+esc(s.name)+'"></td>').join("")+'</tr>';
   });
   return h+dayChkRow(e)+'</tbody></table>';
 }
@@ -782,7 +787,7 @@ function vDay(){
   h+='<div class="row frow">'+field("名前を足す",'<input data-u="draft.drow" value="'+esc(S.ui.draft.drow)+'" list="daystaff" placeholder="職員の名前">')+'<button class="b2 bi" data-act="dayRow">'+svg("plus",16)+'行を足す</button>'+(missing.length?'<button class="b2 bi" data-act="dayStaff">'+svg("people",16)+'職員名をまとめて並べる（'+missing.length+'人）</button>':"")+'</div></div>';
   /* 3. 抜けチェック */
   h+='<div class="sec"><h2>'+IC("alert","--k-o")+'3. 抜けチェック（持ち場ごとに必要な人数）</h2><p class="small muted" style="margin:0">必要な人数を入れた持ち場だけ数えます。マスにその名前が書いてあれば1人と数えます（例：「受付応援」は「受付」に、「門前見張り」は「門前」に入ります）。持ち場の種類は表の色に使います。</p><div class="tw card"><table class="dneed"><thead><tr><th>持ち場</th><th>種類（色）</th>'+d.slots.map(s=>'<th>'+esc(s.name||"（名前なし）")+'</th>').join("")+'<th></th></tr></thead><tbody>'+
-    d.posts.map((p,i)=>'<tr><td><input data-p="day.posts.'+i+'.name" value="'+esc(p.name)+'" aria-label="持ち場の名前"></td><td><select data-p="day.posts.'+i+'.kind" aria-label="種類">'+Object.keys(DAYK).map(k=>'<option value="'+k+'"'+(p.kind===k?" selected":"")+'>'+DAYK[k]+'</option>').join("")+'</select></td>'+d.slots.map(s=>'<td><input type="number" min="0" data-p="day.posts.'+i+'.need.'+s.id+'" value="'+((+p.need[s.id]||0)||"")+'" placeholder="—" aria-label="'+esc(p.name)+'・'+esc(s.name)+'の必要人数"></td>').join("")+'<td><button class="x" data-act="dayPostDel" data-i="'+i+'" aria-label="この持ち場を消す">'+svg("trash",16)+'</button></td></tr>').join("")+
+    d.posts.map((p,i)=>'<tr><td><input data-p="day.posts.'+i+'.name" value="'+esc(p.name)+'" aria-label="持ち場の名前"></td><td><select data-p="day.posts.'+i+'.kind" aria-label="種類">'+Object.keys(DAYK).map(k=>'<option value="'+k+'"'+(p.kind===k?" selected":"")+'>'+DAYK[k]+'</option>').join("")+'</select></td>'+d.slots.map(s=>'<td><input type="number" min="0" data-p="day.posts.'+i+'.need.'+esc(s.id)+'" value="'+((+p.need[s.id]||0)||"")+'" placeholder="—" aria-label="'+esc(p.name)+'・'+esc(s.name)+'の必要人数"></td>').join("")+'<td><button class="x" data-act="dayPostDel" data-i="'+i+'" aria-label="この持ち場を消す">'+svg("trash",16)+'</button></td></tr>').join("")+
     '</tbody></table><div class="row frow" style="margin-top:10px">'+field("持ち場を足す",DR("dpost.name",{ph:"例：プール"}))+field("種類（色）",DS("dpost.kind",Object.keys(DAYK).map(k=>[k,DAYK[k]])))+'<button class="b2 bi" data-act="dayPost">'+svg("plus",16)+'足す</button></div></div></div>';
   h+='<datalist id="dayposts">'+d.posts.filter(p=>String(p.name||"").trim()).map(p=>'<option value="'+esc(p.name)+'"></option>').join("")+['門前見張り','駐車場見張り'].map(n=>'<option value="'+n+'"></option>').join("")+CLASSES.map(c=>'<option value="'+esc(cshort(c[0]))+'クラス"></option>').join("")+'<option value="'+CONT+'">左と同じ</option></datalist>';
   h+='<datalist id="daystaff">'+missing.map(n=>'<option value="'+esc(n)+'"></option>').join("")+'</datalist>';
@@ -1033,13 +1038,13 @@ function doPrint(){if(!ev()){alert_("印刷する行事がありません。先�
 /* ===== 描画 ===== */
 /* 画面上部の帯：ブラウザ保存なら「全部消す」、シート保存なら保存の状態と知らせ */
 let SAVE={k:"",m:"",at:""},lastProblem="";
-const PROBLEM=["conflict","net","pass","big"];
+const PROBLEM=["net","pass","big","stuck","missing","halted","badrow","hikae-lost"];
 function paintBanner(){
   if(Store.mode==="local"){$c("banner").innerHTML=S.ui.confirmReset?'<span><b>このブラウザに入力したものを全部消します。</b>行事・伝達ログ・写真もすべて消えます。元に戻せません。</span><span class="row"><button class="danger" data-act="doReset">全部消す</button><button class="b2" data-act="noReset">やめる</button></span>':'<span><b>v2（準備中）。</b>入力はこのブラウザにだけ保存されます（Googleシートにつなぐまでの仮の保存です）。</span><button class="b2" data-act="askReset">全部消す</button>';return}
   const k=SAVE.k,bad=PROBLEM.indexOf(k)>=0;
-  const msg=bad?'<span style="color:var(--crit)"><b>'+esc(SAVE.m)+'</b></span>':'<span>'+(k==="saving"?"Googleシートに保存しています…":k==="saved"?"Googleシートに保存しました（"+SAVE.at+"）":"入力はGoogleシートに保存されます。")+'</span>';
-  const btn=k==="net"?'<button class="b" data-act="retry">もう一度送る</button>':(k==="conflict"||k==="pass")?'<button class="b" data-act="reload">開き直す</button>':"";
-  $c("banner").innerHTML=msg+'<span class="row">'+btn+'<button class="b2" data-act="forget">この端末の合言葉を消す</button></span>';
+  const msg=bad?'<span style="color:var(--crit)"><b>'+esc(SAVE.m)+'</b></span>':'<span>'+(k==="saving"?"Googleシートに保存しています…":k==="saved"?"Googleシートに保存しました（"+SAVE.at+"）":k==="merged"?"ほかの人の入力を取り込みました（"+SAVE.at+"）":"入力はGoogleシートに保存されます。")+'</span>';
+  const btn=(k==="net"||k==="stuck"||k==="big"||k==="halted")?'<button class="b" data-act="retry">もう一度送る</button>':k==="pass"?'<button class="b" data-act="reload">開き直す</button>':"";
+  $c("banner").innerHTML=msg+'<span class="row">'+btn+'<button class="b2" data-act="refresh">最新にする</button><button class="b2" data-act="forget">この端末の合言葉を消す</button></span>'+missingHTML()+hikaeHTML();
 }
 Store.onStatus=function(k,m){
   const d=new Date();SAVE={k:k,m:m,at:d.getHours()+":"+String(d.getMinutes()).padStart(2,"0")};paintBanner();
@@ -1048,12 +1053,111 @@ Store.onStatus=function(k,m){
 };
 /* ドライブの写真が届いたら、その写真の枠だけ差し替える（入力中の欄を描き直さないため） */
 Store.onPhoto=function(k,src){document.querySelectorAll("img[data-ph]").forEach(function(im){if(im.getAttribute("data-ph")===k)im.src=src})};
-const phAttr=p=>'src="'+Store.photoSrc(p)+'"'+(String(p).indexOf("drv:")===0?' data-ph="'+esc(p)+'"':"");
+/* ===== 同時編集：store.js との約束（設計メモ 6〜8節） ===== */
+let COMPOSING=false,FOCUS=null;
+document.addEventListener("compositionstart",function(){COMPOSING=true},true);
+document.addEventListener("compositionend",function(){COMPOSING=false},true);
+Store.order=CLASSES.map(c=>c[0]);
+Store.newId=uid;
+/* 番号のない行に番号をつける（はじめの一回は何行目か、そのあとは中身の指紋。設計メモ5節） */
+Store.prepare=function(e,when){return typeof Merge!=="undefined"?Merge.number(e,when):e};
+/* 日本語の変換中は、画面のデータを入れ替えない（確定してから混ぜる） */
+Store.canApply=function(){return !COMPOSING};
+/* 入力中の欄を「どの行（番号）の・どの欄か」で覚える。data-p の「何行目か」を行の番号に置き換えた、段の並び（{k}／{id}）にする
+   （行の番号には「.」が入ることがある（m:day.posts:0 など）ので、文字につないで分け直さない） */
+const toIdP=(e,p)=>{let o=e;return p.split(".").map(k=>{let r={k:k};if(Array.isArray(o)&&/^\d+$/.test(k)&&o[k]&&typeof o[k].id==="string")r={id:o[k].id};o=o==null?o:o[k];return r})};
+const toIdxP=(e,q)=>{let o=e;const out=[];for(const s of q){if(s.id!==undefined){if(!Array.isArray(o))return null;const j=o.findIndex(x=>x&&x.id===s.id);if(j<0)return null;out.push(String(j));o=o[j]}else{out.push(s.k);o=o==null?o:o[s.k]}}return out.join(".")};
+let PLACE_OTHER=null;   /* 配置の「そのほか（書く）」を開いている行（何行目かでなく番号で覚える） */
+Store.beforeApply=function(){
+  const a=document.activeElement,e=ev();
+  PLACE_OTHER=e&&S.ui.placeOther!=null&&e.places&&e.places[S.ui.placeOther]?{eid:e.id,id:e.places[S.ui.placeOther].id}:null;
+  const p=a&&a.getAttribute&&a.getAttribute("data-p"),u=a&&a.getAttribute&&a.getAttribute("data-u");
+  if((!p&&!u)||!e){FOCUS=null;return}
+  let s0=null,s1=null;try{s0=a.selectionStart;s1=a.selectionEnd}catch(x){}
+  /* 作りかけの欄（data-u。タスクを足す欄など）は行事の中身ではないので、欄の名前で覚える */
+  FOCUS=p?{eid:e.id,q:toIdP(e,p),s:s0,t:s1}:{eid:e.id,u:u,s:s0,t:s1};
+};
+function restoreFocus(){
+  const f=FOCUS,e=ev();FOCUS=null;if(!f||!e||e.id!==f.eid)return;
+  let el;
+  if(f.u)el=document.querySelector('[data-u="'+CSS.escape(f.u)+'"]');
+  else{const p=toIdxP(e,f.q);if(p==null)return;el=document.querySelector('#view [data-p="'+CSS.escape(p)+'"]')}
+  if(!el)return;
+  try{el.focus({preventScroll:true});if(f.s!=null&&el.setSelectionRange){const n=String(el.value).length;el.setSelectionRange(Math.min(f.s,n),Math.min(f.t,n))}}catch(x){}
+}
+/* 混ぜた結果が画面のデータに入った → 描き直して、カーソルを戻す */
+Store.onChange=function(info){
+  S.ui.dayDel=null;S.ui.progDel=null;S.ui.whoOther={};S.ui.placeOther=null;  /* 何行目かで覚えている確認は閉じる（行がずれるため） */
+  const po=PLACE_OTHER,pe=ev();PLACE_OTHER=null;   /* ただし配置の「そのほか（書く）」は、書きかけを消さないよう、同じ行で開いたままにする */
+  if(po&&pe&&pe.id===po.eid&&po.id){const j=(pe.places||[]).findIndex(x=>x&&x.id===po.id);if(j>=0)S.ui.placeOther=j}
+  if(!S.events.some(z=>z.id===S.currentId))S.currentId=(S.events[0]||{}).id||"";
+  render(true);restoreFocus();
+  const msg=[];
+  if(info.cancelled.length)msg.push(info.cancelled.map(id=>"「"+((S.events.find(z=>z.id===id)||{}).name||"行事")+"」").join("")+"は、ほかの人が直していたので、消すのをやめました");
+  if(info.notes.some(n=>n.kind==="keptDeleted"))msg.push("ほかの人が消した行ですが、入力があったので残しました");
+  if(info.hikae.length)msg.push("同じ欄をほかの人も直していました。先に保存された方を出し、あなたの入力は控えに残しています");
+  toast(msg.length?msg.join("。"):"ほかの人の入力を取り込みました",msg.length>0);
+};
+/* ほかのアプリ・タブから戻ったら、最新を取り寄せて混ぜる（1分ごとの読み直しはしない） */
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&Store.refresh)Store.refresh()});
+
+/* 控えの見せ方：帯にまとめて出し、いま開いている欄の横にも出す */
+const HKL={name:"行事名",date:"本番日",rainDate:"予備日",purpose:"目的",success:"成功の姿",delegate:"任せ方",team:"体制",lead:"責任者",commander:"司令塔",photographer:"カメラマン",kids:"クラスごとの育ち",checks:"確認項目",tasks:"タスク",staff:"人数",places:"配置",care:"個別配慮",familyLimit:"家族の人数制限",childcare:"託児",orders:"発注",budget:"予算",overtime:"残業",rate:"単価",notices:"お知らせ",phrase:"保護者向けの文",logs:"伝達ログ",snaps:"写真の記録",retros:"振り返り",prevTaskCount:"前回のタスク数",day:"当日の動き",prog:"プログラム",slots:"時間帯",posts:"持ち場",rows:"人",cells:"マス",parts:"部",items:"演目",need:"必要な人数",
+  title:"内容",owner:"誰が",start:"開始",due:"期限",status:"状態",text:"内容",note:"メモ",done:"チェック",role:"役割",cls:"クラス",growth:"育ち",daily:"日常",initial:"イニシャル",plan:"どうするか",person:"担当",to:"宛先",amount:"金額",state:"状態",label:"週",hours:"時間",what:"何を",when:"いつ",drafter:"起案",one:"一言",ok:"確認",fact:"事実",did:"したこと",who:"誰が",weeks:"何週前",from:"から",in:"出勤",out:"退勤",org:"園名",meet:"集合",kind:"種類",child:"子ども",parent:"保護者",ask:"お願い","正規":"正規","有期":"有期","パート":"パート"};
+const hkSteps=at=>{const a=[];String(at).replace(/\[([^\]]*)\]|([^.[\]]+)/g,function(_,id,k){a.push(id!==undefined?{id:id}:{k:k});return ""});return a};
+const rowLabel=r=>String((r&&(r.title||r.name||r.text||r.what||r.one||r.cls||r.label))||"").slice(0,20);
+function hkWhere(e,at){
+  let o=e;const out=[];
+  hkSteps(at).forEach(st=>{
+    if(st.id!==undefined){const r=Array.isArray(o)?o.find(x=>x&&x.id===st.id):null;out.push(r?"「"+rowLabel(r)+"」":"（消えた行）");o=r}
+    else{out.push(HKL[st.k]||st.k);o=o==null?o:o[st.k]}
+  });
+  return out.join("・");
+}
+function hkToP(e,at){
+  let o=e;const out=[];
+  for(const st of hkSteps(at)){
+    if(st.id!==undefined){if(!Array.isArray(o))return null;const j=o.findIndex(x=>x&&x.id===st.id);if(j<0)return null;out.push(String(j));o=o[j]}
+    else{out.push(st.k);o=o==null?o:o[st.k]}
+  }
+  return out.join(".");
+}
+const hkVal=v=>v===""||v==null?"（空欄）":typeof v==="boolean"?(v?"チェックあり":"チェックなし"):String(v).slice(0,80);
+function hikaeHTML(){
+  const hs=Store.hikae?Store.hikae():[];if(!hs.length)return "";
+  return '<div class="bline"><b>同じ欄をほかの人も直していた、あなたの入力の控え（'+hs.length+'件）。欄には先に保存された方を出しています。</b></div>'+hs.map(h=>{
+    const e=S.events.find(z=>z.id===h.eventId),k=esc(h.key);
+    const where=esc(h.eventName)+"・"+esc(e?hkWhere(e,h.at):h.at);
+    const open=h.eventId!==S.currentId?'<button class="b2" data-act="open" data-i="'+esc(h.eventId)+'">この行事を開く</button>':"";
+    const ask=S.ui.hkAsk&&S.ui.hkAsk.key===h.key?S.ui.hkAsk:null;
+    if(ask)return '<div class="bline"><span>'+where+'：その後さらに直されています。いま「'+esc(hkVal(ask.now))+'」／あなた「'+esc(hkVal(ask.mine))+'」。どちらにしますか？</span><button class="b" data-act="hkForce" data-i="'+k+'">あなたの方にする</button><button class="b2" data-act="hkDrop" data-i="'+k+'">いまのままにする</button></div>';
+    if(S.ui.hkGone===h.key)return '<div class="bline"><span>'+where+'：この行は、ほかの人が消しました。あなたの入力は「'+esc(hkVal(h.mine))+'」です。戻すときは、行を足して入れ直してください。</span><button class="b2" data-act="hkDrop" data-i="'+k+'">控えを捨てる</button></div>';
+    return '<div class="bline"><span>'+where+'：あなたの入力「'+esc(hkVal(h.mine))+'」（先に保存された方「'+esc(hkVal(h.theirs))+'」）</span><button class="b" data-act="hkMine" data-i="'+k+'">自分の方にする</button><button class="b2" data-act="hkDrop" data-i="'+k+'">捨てる</button>'+open+'</div>';
+  }).join("");
+}
+function paintHikae(){
+  const e=ev();if(!e||!Store.hikae||S.ui.tab==="list"||S.ui.tab==="docs")return;
+  Store.hikae().filter(h=>h.eventId===e.id).forEach(h=>{
+    const p=hkToP(e,h.at);if(p==null)return;
+    const el=document.querySelector('#view [data-p="'+CSS.escape(p)+'"]');if(!el)return;
+    el.classList.add("hkf");
+    const k=esc(h.key),ask=S.ui.hkAsk&&S.ui.hkAsk.key===h.key?S.ui.hkAsk:null;   /* 聞き直しは、押した欄の横にも出す（上の帯だけだと、押しても何も起きないように見える。2026-11-11 本物で確認） */
+    el.insertAdjacentHTML("afterend",ask
+      ?'<div class="hk">その後さらに直されています。いま「'+esc(hkVal(ask.now))+'」／あなた「'+esc(hkVal(ask.mine))+'」。どちらにしますか？<button class="b2" data-act="hkForce" data-i="'+k+'">あなたの方にする</button><button class="b2" data-act="hkDrop" data-i="'+k+'">いまのままにする</button></div>'
+      :'<div class="hk">あなたの入力：「'+esc(hkVal(h.mine))+'」<button class="b2" data-act="hkMine" data-i="'+k+'">自分の方にする</button><button class="b2" data-act="hkDrop" data-i="'+k+'">捨てる</button></div>');
+  });
+}
+/* シートに見当たらない行事【S4】：自動では消さず、どうするか選んでもらう */
+function missingHTML(){
+  const ms=Store.missing?Store.missing():[];
+  return ms.map(m=>'<div class="bline"><b>「'+esc(m.name)+'」は、シートに見当たりません</b><span>（ほかの人が消したか、シートの行が壊れた可能性）。この画面の入力は残っています。</span><button class="b2" data-act="dropMissing" data-i="'+esc(m.id)+'">この画面からも消す</button><button class="b" data-act="saveAsNew" data-i="'+esc(m.id)+'">新しい行事として保存し直す</button></div>').join("");
+}
+const phAttr=p=>'src="'+esc(Store.photoSrc(p))+'"'+(String(p).indexOf("drv:")===0?' data-ph="'+esc(p)+'"':"");
 const VIEWS={list:vList,dash:vDash,tasks:vTasks,people:vPeople,day:vDay,things:vThings,money:vMoney,info:vInfo,prog:vProg,log:vLog,docs:vDocs};
 function render(keepScroll){
   const e=ev();
   const fe=fyEvents(S.ui.fy);
-  $c("ctl").innerHTML='<label>年度 <select data-u="fy">'+fyList().map(y=>'<option value="'+y+'"'+(y===S.ui.fy?" selected":"")+'>'+y+'年度'+(y<curFY()?'（アーカイブ）':'')+'</option>').join("")+'</select></label><label>行事 <select data-u="currentId">'+(fe.length?fe.map(x=>'<option value="'+x.id+'"'+(x.id===e.id?" selected":"")+'>'+esc(x.name)+'</option>').join(""):'<option value="">（この年度の行事なし）</option>')+'</select></label><label>この日として見る <input type="date" data-u="asOf" value="'+esc(asOf())+'"></label><button class="b2" data-act="today">今日に戻す</button><button class="b bi" data-act="print">'+svg("print",16)+'印刷する（共有用シート）</button>';
+  $c("ctl").innerHTML='<label>年度 <select data-u="fy">'+fyList().map(y=>'<option value="'+y+'"'+(y===S.ui.fy?" selected":"")+'>'+y+'年度'+(y<curFY()?'（アーカイブ）':'')+'</option>').join("")+'</select></label><label>行事 <select data-u="currentId">'+(fe.length?fe.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===e.id?" selected":"")+'>'+esc(x.name)+'</option>').join(""):'<option value="">（この年度の行事なし）</option>')+'</select></label><label>この日として見る <input type="date" data-u="asOf" value="'+esc(asOf())+'"></label><button class="b2" data-act="today">今日に戻す</button><button class="b bi" data-act="print">'+svg("print",16)+'印刷する（共有用シート）</button>';
   paintBanner();
   $c("tabs").innerHTML=TABS.map(t=>'<button class="tab" role="tab" aria-selected="'+(S.ui.tab===t[0])+'" data-act="go" data-i="'+t[0]+'">'+IC(t[2],t[3],true)+'<span>'+t[1]+'</span></button>').join("");
   NAMES=Array.from(new Set(OWNERS.concat(STAFF,e?e.team.map(t=>t.name):[]))).filter(Boolean);
@@ -1063,6 +1167,7 @@ function render(keepScroll){
   if(z&&e){const ph=photoArr(e,z.i)||[];const src=ph[z.j];if(src){zb.className="on";zb.innerHTML='<div><img '+phAttr(src)+' alt="写真（拡大）"><div class="zt">タップで閉じる</div></div>'}else{S.ui.zoom=null;zb.className="";zb.innerHTML=""}}else{zb.className="";zb.innerHTML=""}
   derived();buildSheet();
   fitAll();
+  paintHikae();
   if(keepScroll)window.scrollTo(0,y);
 }
 function $c(id){return document.getElementById(id)}
@@ -1170,6 +1275,11 @@ document.addEventListener("click",function(x){
   if(a==="dayUp"||a==="dayDown"){const d=e.day,k=Number(i),j=a==="dayUp"?k-1:k+1;if(!d||j<0||j>=d.rows.length)return;const tmp=d.rows[k];d.rows[k]=d.rows[j];d.rows[j]=tmp;touch();render(true);return}
   if(a==="dayPostDel"){const d=e.day;if(d){d.posts.splice(Number(i),1);touch()}render(true);return}
   if(a==="retry"){if(Store.retry)Store.retry();return}
+  if(a==="refresh"){if(Store.refresh)Store.refresh();return}
+  if(a==="dropMissing"){if(Store.dropMissing&&Store.dropMissing(i)){if(!S.events.some(z=>z.id===S.currentId))S.currentId=(S.events[0]||{}).id||"";if(!S.events.length)S.ui.tab="list";persist();render(true)}return}
+  if(a==="saveAsNew"){const n=Store.saveAsNew?Store.saveAsNew(i):"";if(n){if(S.currentId===i)S.currentId=n;persist();render(true);toast("新しい行事として保存し直します")}return}
+  if(a==="hkMine"||a==="hkForce"){const r=Store.keepMine(i,a==="hkForce");S.ui.hkAsk=null;S.ui.hkGone=null;if(r.ask)S.ui.hkAsk={key:i,now:r.now,mine:r.mine};else if(r.gone)S.ui.hkGone=i;else toast("あなたの入力に戻しました");render(true);return}
+  if(a==="hkDrop"){Store.dropHikae(i);S.ui.hkAsk=null;S.ui.hkGone=null;render(true);return}
   if(a==="reload"){location.reload();return}
   if(a==="forget"){Store.forget();location.reload();return}
   if(a==="jump"){const r=$c("tr_"+i);if(r){r.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});r.classList.remove("hl");void r.offsetWidth;r.classList.add("hl")}return}
@@ -1193,11 +1303,11 @@ document.addEventListener("click",function(x){
   if(a==="print"){doPrint();return}
   if(a==="doc"){S.ui.tab="docs";S.ui.doc=b.getAttribute("data-d");render();const id=b.getAttribute("data-i");const el=id&&id!=="top"?document.getElementById(id):null;if(el){el.scrollIntoView({behavior:"auto",block:"start"});el.classList.add("hl")}else window.scrollTo(0,0);return}
   if(a==="del"){const k=b.getAttribute("data-k");e[k].splice(Number(i),1);S.ui.whoOther={};S.ui.placeOther=null;touch();render(true);return}
-  if(a==="addTeam"){e.team.push({name:"",role:""})}
-  else if(a==="addCare"){e.care.push({cls:CLASSES[0][0],initial:"",plan:"",person:""})}
-  else if(a==="addOrder"){e.orders.push({name:"",to:"",due:"",amount:0,state:"未発注"})}
-  else if(a==="addOT"){e.overtime.push({label:"",hours:0})}
-  else if(a==="addNotice"){e.notices.push({what:"",when:"",drafter:"",one:"",ok:false})}
+  if(a==="addTeam"){e.team.push({id:uid(),name:"",role:""})}
+  else if(a==="addCare"){e.care.push({id:uid(),cls:CLASSES[0][0],initial:"",plan:"",person:""})}
+  else if(a==="addOrder"){e.orders.push({id:uid(),name:"",to:"",due:"",amount:0,state:"未発注"})}
+  else if(a==="addOT"){e.overtime.push({id:uid(),label:"",hours:0})}
+  else if(a==="addNotice"){e.notices.push({id:uid(),what:"",when:"",drafter:"",one:"",ok:false})}
   else if(a==="addCheck"){const tx=String(dr.chk[i]||"").trim();if(!tx){alert_("確認項目を入れてください");return}e.checks.push({id:uid(),cat:i,group:"every",text:tx,done:false,note:"",ref:"",custom:true});dr.chk[i]=""}
   else if(a==="progAdd"){const g=progInit(e),n=String(dr.ppart||"").trim();if(!n){alert_("部の名前を入れてください（例：第1部）");return}g.parts.push({id:uid(),name:n,cls:[],meet:"",from:"",to:"",items:[]});dr.ppart=""}
   else if(a==="progFromDay"){const g=progInit(e);(e.day&&e.day.slots||[]).forEach(s=>{if(String(s.name||"").trim()&&s.cls&&s.cls.length&&!g.parts.some(p=>p.name===s.name))g.parts.push({id:uid(),name:s.name,cls:clsSort(s.cls.slice()),meet:"",from:s.from||"",to:s.to||"",items:[]})})}
@@ -1205,12 +1315,12 @@ document.addEventListener("click",function(x){
   else if(a==="daySlot"){const x=dr.slot,d=dayInit(e);if(!String(x.name).trim()){alert_("時間帯の名前を入れてください（例：1部）");return}if(x.from&&x.to&&tmin(x.to)<=tmin(x.from)){alert_("終わりは始まりより後の時刻にしてください");return}d.slots.push({id:uid(),name:x.name.trim(),from:x.from||"",to:x.to||"",cls:[]});dr.slot={name:"",from:"",to:""}}
   else if(a==="dayRow"){const n=String(dr.drow||"").trim(),d=dayInit(e);if(!n){alert_("名前を入れてください");return}d.rows.push({id:uid(),name:n,in:"",out:"",cells:{}});dr.drow=""}
   else if(a==="dayStaff"){const d=dayInit(e);STAFF.filter(n=>!d.rows.some(r=>r.name===n)).forEach(n=>d.rows.push({id:uid(),name:n,in:"",out:"",cells:{}}))}
-  else if(a==="dayPost"){const x=dr.dpost,d=dayInit(e),n=String(x.name||"").trim();if(!n){alert_("持ち場の名前を入れてください");return}d.posts.push({name:n,kind:x.kind||"ba",need:{},custom:true});dr.dpost={name:"",kind:"ba"}}
-  else if(a==="addPlace"){const n=String(dr.place||"").trim();if(!n){alert_("配置の名前を入れてください");return}e.places.push({name:n,need:0,custom:true});dr.place=""}
+  else if(a==="dayPost"){const x=dr.dpost,d=dayInit(e),n=String(x.name||"").trim();if(!n){alert_("持ち場の名前を入れてください");return}d.posts.push({id:uid(),name:n,kind:x.kind||"ba",need:{},custom:true});dr.dpost={name:"",kind:"ba"}}
+  else if(a==="addPlace"){const n=String(dr.place||"").trim();if(!n){alert_("配置の名前を入れてください");return}e.places.push({id:uid(),name:n,need:0,custom:true});dr.place=""}
   else if(a==="addTask"){const t=dr.task;if(!String(t.title).trim()||!t.due){alert_("内容と期限を入れてください");return}e.tasks.push({id:uid(),cat:t.cat,title:t.title.trim(),owner:t.owner,start:t.start||t.due,due:t.due,status:t.status||"未着手"});dr.task={cat:"物",title:"",owner:"",start:"",due:"",status:"未着手"};S.ui.whoOther={}}
-  else if(a==="addLog"){const l=dr.log;if(!l.when||!String(l.one).trim()){alert_("いつ・言いたい一言を入れてください");return}e.logs.push({when:l.when,where:l.where,from:l.from,to:l.to,one:l.one.trim(),ref:l.ref,ok:false});if(!touch()){e.logs.pop();render(true);return}dr.log=blankLog();render(true);return}
-  else if(a==="addSnap"){const x=dr.snap;if(!x.photos.length||!String(x.what).trim()){alert_("写真と「何の写真か」を入れてください");return}if(!e.snaps)e.snaps=[];e.snaps.push({when:x.when||todayISO(),what:x.what.trim(),photos:x.photos.slice()});if(!touch()){e.snaps.pop();render(true);return}dr.snap=blankSnap();render(true);return}
-  else if(a==="addRetro"){const r=dr.retro;e.retros.push({cat:r.cat,fact:r.fact.trim(),did:r.did.trim(),who:r.who.trim(),weeks:Number(r.weeks),what:r.what.trim()});dr.retro={cat:"人",fact:"",did:"",who:"",weeks:"",what:""};S.ui.whoOther={}}
+  else if(a==="addLog"){const l=dr.log;if(!l.when||!String(l.one).trim()){alert_("いつ・言いたい一言を入れてください");return}e.logs.push({id:uid(),when:l.when,where:l.where,from:l.from,to:l.to,one:l.one.trim(),ref:l.ref,ok:false});if(!touch()){e.logs.pop();render(true);return}dr.log=blankLog();render(true);return}
+  else if(a==="addSnap"){const x=dr.snap;if(!x.photos.length||!String(x.what).trim()){alert_("写真と「何の写真か」を入れてください");return}if(!e.snaps)e.snaps=[];e.snaps.push({id:uid(),when:x.when||todayISO(),what:x.what.trim(),photos:x.photos.slice()});if(!touch()){e.snaps.pop();render(true);return}dr.snap=blankSnap();render(true);return}
+  else if(a==="addRetro"){const r=dr.retro;e.retros.push({id:uid(),cat:r.cat,fact:r.fact.trim(),did:r.did.trim(),who:r.who.trim(),weeks:Number(r.weeks),what:r.what.trim()});dr.retro={cat:"人",fact:"",did:"",who:"",weeks:"",what:""};S.ui.whoOther={}}
   else if(a==="mk"){
     const src=(e&&(e.retros||[]).length?e:null)||S.events.find(z=>(z.retros||[]).length);
     const n=newEvent(dr.ev.name.trim()||"新しい行事",dr.ev.date);
